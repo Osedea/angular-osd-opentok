@@ -1,0 +1,21 @@
+{
+  "name": "angular-osd-opentok",
+  "main": "angular-osd-opentok.js",
+  "version": "0.0.1",
+  "homepage": "https://github.com/Osedea/angular-osd-opentok",
+  "authors": [
+    "Angus <donald.macisaac@mail.mcgill.ca>"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "ng-lodash": "~0.2.0",
+    "angular-resource": "~1.3.15"
+  }
+}
