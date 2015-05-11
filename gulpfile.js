@@ -11,6 +11,7 @@ var paths = {
     js: [
         'src/app.js',
         'src/config.js',
+        'templates/main.js',
         'src/angular-osd-opentok.js',
         'src/decorators/**/*.js'
     ],
