@@ -12,10 +12,7 @@
 
         var config = {
             maxSubscribers: 2,
-            credentials: {
-                apiKey: '44999602',
-                sid: '1_MX40NDk5OTYwMn5-MTQyNDkwNzEyNTY3OH4rQ0V3UkhlZmxqaVBPSzYxbGxycFNzTmN-fg',
-            }
+            credentials: {}
         };
 
         self.setConfig = function(value) {

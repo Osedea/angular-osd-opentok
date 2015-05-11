@@ -76,10 +76,7 @@
 
         var config = {
             maxSubscribers: 2,
-            credentials: {
-                apiKey: '44999602',
-                sid: '1_MX40NDk5OTYwMn5-MTQyNDkwNzEyNTY3OH4rQ0V3UkhlZmxqaVBPSzYxbGxycFNzTmN-fg',
-            }
+            credentials: {}
         };
 
         self.setConfig = function(value) {
@@ -165,7 +162,7 @@
     'use strict';
 
     // @ngInject
-    function LiveConsultationCtrl($scope, $timeout, Subscriber, Publisher, OpenTok, OpentokConfig, AppointmentUtils, lodash, Array) {
+    function LiveConsultationCtrl($scope, $timeout, Subscriber, Publisher, OpentokConfig) {
         var session = null;
         var self = this;
 
@@ -187,7 +184,7 @@
         //OT.setLogLevel(OT.DEBUG);
 
         $scope.init = function () {
-            // Required for Opentop > 2.2
+            // Required for Opentok > 2.2
             var a = new XMLHttpRequest();
 
             XMLHttpRequest.prototype = Object.getPrototypeOf(a);
@@ -340,7 +337,7 @@
         };
 
         $scope.switchFullscreen = function (subscriber) {
-            lodash.each($scope.subscribers, function (subscriber) {
+            $scope.subscribers.forEach(function (subscriber) {
                 subscriber.isFullscreen = false;
             });
 
@@ -359,7 +356,7 @@
         };
 
         $scope.isBeingSubscribedTo = function (stream) {
-            return lodash.some($scope.subscribers, function (s) {
+            return $scope.subscribers.some(function (s) {
                 return s.session && s.session.stream && s.session.stream.id == stream.id;
             });
         };
@@ -369,7 +366,9 @@
 
             if (stream) {
                 removeSubscriberByStream(stream);
-                $scope.streamsAvailable = Array.splice(stream, $scope.streamsAvailable);
+                $scope.streamsAvailable = $scope.streamsAvailable.filter(function (s) {
+                    return stream.id != s.id;
+                });
             }
 
             if ($scope.subscribers.length) {
@@ -380,15 +379,15 @@
         }
 
         function removeSubscriberByStream(stream) {
-            $scope.subscribers = lodash.reject($scope.subscribers, function (s) {
-                return s.session.stream && s.session.stream.id === stream.id;
+            $scope.subscribers = $scope.subscribers.filter($scope.subscribers, function (s) {
+                return s.session.stream && s.session.stream.id != stream.id;
             });
         }
 
         function getStreamByConnection(connection) {
-            return lodash.first(lodash.filter($scope.streamsAvailable, function (s) {
+            return $scope.streamsAvailable.filter($scope.streamsAvailable, function (s) {
                 return s.connection.id === connection.id;
-            }));
+            }).pop();
         }
 
         function setConnectionCallbacks() {
@@ -433,8 +432,8 @@
                 onAccessDenied: '&',
                 onAccessRequired: '&',
                 onSubscriberLimitReached: '&',
-                mediaAccessAllowed: '=',
-            },
+                mediaAccessAllowed: '='
+            }
         };
     }
 
