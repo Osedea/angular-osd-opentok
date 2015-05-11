@@ -3,7 +3,7 @@
     'use strict';
 
     // @ngInject
-    function Subscriber() {
+    function Subscriber(SubscriberConfig) {
         return function (count) {
             var self = this;
 
@@ -13,19 +13,19 @@
             self.divId = "subscriber-" + count;
 
             self.options = {
-                width: self.isFullscreen ? "100%" : "200px",
-                height: self.isFullscreen ? "100%" : "150px",
+                width: self.isFullscreen ? "100%" : SubscriberConfig.width + "px",
+                height: self.isFullscreen ? "100%" : SubscriberConfig.height + "px",
                 subscribeToVideo: true,
                 subscribeToAudio: true,
                 insertMode: "replace",
             };
 
             self.getStyle = function () {
-                var marginLeft = (-205 * self.count);
+                var marginLeft = ((-SubscriberConfig.width + 5) * self.count);
 
                 return {
-                    width: self.isFullscreen ? "100%" : "200px",
-                    height: self.isFullscreen ? "100%" : "150px",
+                    width: self.isFullscreen ? "100%" : SubscriberConfig.width + "px",
+                    height: self.isFullscreen ? "100%" : SubscriberConfig.height + "px",
                     'margin-left': self.isFullscreen ? 0 : marginLeft + "px",
                 };
             };

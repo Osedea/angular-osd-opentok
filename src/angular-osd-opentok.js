@@ -63,7 +63,7 @@
             session.connect($scope.config.credentials.token, function (error) {
                 logError(error);
 
-                Publisher.session = OT.initPublisher('publisherDiv', Publisher.options, logError);
+                Publisher.session = OT.initPublisher(Publisher.divId, Publisher.options, logError);
 
                 setPublisherCallbacks();
 
@@ -270,9 +270,9 @@
         return {
             restrict: 'E',
             replace: true,
-            templateUrl: '/templates/consultation/live.html',
+            templateUrl: '/templates/angular-osd-opentok.html',
             controller: 'LiveConsultationCtrl',
-            controllerAs: 'liveCtrl',
+            controllerAs: 'liveCtrl'
         };
     }
 

@@ -11,6 +11,9 @@
         var self = this;
 
         var config = {
+            width: 200,
+            height: 150,
+            name: "Me"
         };
 
         self.setConfig = function(value) {

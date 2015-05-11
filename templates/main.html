@@ -1,0 +1,126 @@
+<div class="live">
+    <div class="header">
+        <img class="img-circle margin-right" src="/img/logo/logo-chaya-half-white.png" height="45" width="45">
+
+        <div class="inline-block">
+            <h4 class="margin-none">Video Consultations</h4>
+        </div>
+
+        <div class="status-block">
+            <button class="btn btn-clean btn-circle btn-padded bg-white"
+                    ng-click="openModal('#live-info')"
+                    ng-class="systemRequirementsMet ? 'text-green' : 'text-red'">
+                <i class="fa fa-globe padding"></i>
+            </button>
+            <button class="btn btn-clean btn-circle btn-padded bg-white"
+                    ng-click="openModal('#live-info')"
+                    ng-class="mediaAccessAllowed ? 'text-green' : 'text-red'">
+                <i class="fa fa-video-camera padding"></i>
+            </button>
+        </div>
+
+    </div>
+
+    <div id="opentokDiv" class="video-block">
+        <div class="subscriber-list">
+            <div id="subscriber-{{ $index + 1 }}"
+                 ng-repeat="subscriber in subscribers"
+                 ng-class="subscriber.isFullscreen ? 'main-subscriber' : 'thumbnail-subscriber'"
+                 ng-click="switchFullscreen(subscriber)"
+                 ng-style="getSubscriberStyle(subscriber)">
+            </div>
+        </div>
+        <div id="publisherDiv"
+             ng-show="showPublisherTile"
+             ng-class="{ 'fullscreen' : publisher.isFullscreen }"
+             class="publisher">
+
+        </div>
+        <div class="dropup">
+            <button class="btn btn-primary" type="button" id="dropdownMenu2" data-toggle="dropdown"
+                    aria-expanded="true">
+                Users ( {{ streamsAvailable.length + 1 }} ) <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu2">
+                <li>
+                    <a ng-click='showPublisherTile = !showPublisherTile'
+                       ng-disabled='isSubscribing() && !isBeingSubscribedTo(stream)'>
+                        <span>You</span>
+
+                        <div class="pull-right">
+                            <i class="fa" ng-class="showPublisherTile ? 'fa-compress' : 'fa-expand'"></i>
+                        </div>
+                    </a>
+                </li>
+                <li ng-repeat="stream in streamsAvailable | streamsList:isModerator">
+                    <a ng-click="isBeingSubscribedTo(stream) ? forceDisconnect(stream) : subscribe(stream)"
+                       ng-show="isModerator">
+                        <span>{{ stream.name }}</span>
+
+                        <div class="pull-right">
+                            <i class="fa" ng-class="isBeingSubscribedTo(stream) ? 'fa-stop' : 'fa-play'"></i>
+                        </div>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <confirmation-modal
+            custom-id="none-found-modal"
+            prompt-text="No Appointment Found"
+            subprompt-text="You do not have any upcoming video consultations. Please book a live consultation and come back to this page within an hour of the consultation start time."
+            cancel-text="Close">
+    </confirmation-modal>
+
+    <confirmation-modal
+            custom-id="camera-access-required"
+            prompt-text="Camera And Microphone Access Required"
+            subprompt-text="You have not given permission to access your camera and microphone. Once the page loads, a request should appear at the top of you screen asking for access to your camera and microphone. You must accept this before subscribing to another stream."
+            cancel-text="Close">
+    </confirmation-modal>
+
+    <confirmation-modal
+            custom-id="invalid-date-modal"
+            prompt-text="Room Is Not Open"
+            subprompt-text="This room is currently closed. The room will become available an hour before the appointment start time. Your next appointment is {{ appointment.start_date | dateTimeFormat }}. Please come back within an hour of your appointment to join a room."
+            cancel-text="Close">
+    </confirmation-modal>
+
+    <confirmation-modal
+            custom-id="subscriber-limit-modal"
+            prompt-text="Room is full"
+            subprompt-text="There is a maximum of {{ config.maxSubscribers + 1 }} people allowed in a room at one time. Please disconnect from a remote stream before connecting to another."
+            cancel-text="Close">
+    </confirmation-modal>
+
+    <confirmation-modal
+            custom-id="live-info"
+            on-cancel="closeModal('#live-info')"
+            prompt-text="Session Status"
+            cancel-text="Close">
+        <h5 class="text-bold no-margin-top">
+            <i class="fa fa-globe"></i> Compatibility
+        </h5>
+
+        <p class="margin-bottom-2x">
+            Video consultations require the latest version of Chrome, Firefox or Opera. All other browsers are currently
+            unsupported.
+        </p>
+        <h5 class="text-bold">
+            <i class="fa fa-video-camera"></i> Access Allowed
+        </h5>
+
+        <p>
+            In order to join a video consultation, you must give Chaya access to your video and microphone. You will be
+            asked to give access when your the page loads.
+        </p>
+    </confirmation-modal>
+
+    <confirmation-modal
+            custom-id="access-denied"
+            prompt-text="Access Denied"
+            subprompt-text="You've denied access to your video and microphone. Access to these devices is required for video consultations. You may change your access settings through your browser."
+            cancel-text="Close">
+    </confirmation-modal>
+</div>

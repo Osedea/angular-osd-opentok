@@ -3,7 +3,7 @@
     'use strict';
 
     // @ngInject
-    function Publisher() {
+    function Publisher(PublisherConfig) {
         var self = this;
 
         self.session = null;
@@ -13,13 +13,12 @@
         self.divId = 'publisherDiv';
 
         self.options = {
-            width: this.isFullscreen ? "100%" : "200px",
-            height: this.isFullscreen ? "100%" : "150px",
+            width: this.isFullscreen ? "100%" : PublisherConfig.width + "px",
+            height: this.isFullscreen ? "100%" : PublisherConfig.height + "px",
             publishVideo: true,
             publishAudio: true,
             insertMode: "append",
-            //videoSource: "screen",
-            name: ""
+            name: PublisherConfig.name
         };
 
         self.toggleVideo = function () {
