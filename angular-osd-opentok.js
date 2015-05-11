@@ -62,6 +62,104 @@
         .run(osdOpentok);
 })();
 
+(function() {
+
+    'use strict';
+
+    var osdOpentok = angular.module('osdOpentok');
+
+    /*
+     @ngInject
+     */
+    osdOpentok.provider('OpentokConfig', function () {
+        var self = this;
+
+        var config = {
+            maxSubscribers: 2,
+            credentials: {
+                apiKey: '44999602',
+                sid: '1_MX40NDk5OTYwMn5-MTQyNDkwNzEyNTY3OH4rQ0V3UkhlZmxqaVBPSzYxbGxycFNzTmN-fg',
+            }
+        };
+
+        self.setConfig = function(value) {
+            config = value;
+
+            return self;
+        };
+
+        self.$get = function () {
+            return config;
+        };
+
+        return self;
+    });
+})();
+
+(function() {
+
+    'use strict';
+
+    var osdOpentok = angular.module('osdOpentok');
+
+    /*
+     @ngInject
+     */
+    osdOpentok.provider('PublisherConfig', function () {
+        var self = this;
+
+        var config = {
+            width: 200,
+            height: 150,
+            name: "Me"
+        };
+
+        self.setConfig = function(value) {
+            config = value;
+
+            return self;
+        };
+
+        self.$get = function () {
+            return config;
+        };
+
+        return self;
+    });
+})();
+
+(function() {
+
+    'use strict';
+
+    var osdOpentok = angular.module('osdOpentok');
+
+    /*
+     @ngInject
+     */
+    osdOpentok.provider('SubscriberConfig', function () {
+        var self = this;
+
+        var config = {
+            width: 200,
+            height: 150,
+            name: "Me"
+        };
+
+        self.setConfig = function(value) {
+            config = value;
+
+            return self;
+        };
+
+        self.$get = function () {
+            return config;
+        };
+
+        return self;
+    });
+})();
+
 (function () {
 
     'use strict';
@@ -343,4 +441,93 @@
     angular.module('osdOpentok')
         .directive('liveConsultation', liveConsultation)
         .controller('LiveConsultationCtrl', LiveConsultationCtrl);
+})();
+
+(function () {
+
+    'use strict';
+
+    // @ngInject
+    function Publisher(PublisherConfig) {
+        var self = this;
+
+        self.session = null;
+        self.publishingVideo = false;
+        self.stream = null;
+        self.isFullscreen = true;
+        self.divId = 'publisherDiv';
+
+        self.options = {
+            width: this.isFullscreen ? "100%" : PublisherConfig.width + "px",
+            height: this.isFullscreen ? "100%" : PublisherConfig.height + "px",
+            publishVideo: true,
+            publishAudio: true,
+            insertMode: "append",
+            name: PublisherConfig.name
+        };
+
+        self.toggleVideo = function () {
+            if (!self.session) return;
+
+            self.session.publishVideo(!self.publishingVideo);
+            self.publishingVideo = !self.publishingVideo;
+
+            return self.publishingVideo;
+        };
+
+        return self;
+    }
+
+    angular.module("osdOpentok")
+        .factory('Publisher', Publisher);
+})();
+
+(function() {
+
+    'use strict';
+
+    // @ngInject
+    function Subscriber(SubscriberConfig) {
+        return function (count) {
+            var self = this;
+
+            self.isFullscreen = count === 1;
+            self.session = null;
+            self.count = count;
+            self.divId = "subscriber-" + count;
+
+            self.options = {
+                width: self.isFullscreen ? "100%" : SubscriberConfig.width + "px",
+                height: self.isFullscreen ? "100%" : SubscriberConfig.height + "px",
+                subscribeToVideo: true,
+                subscribeToAudio: true,
+                insertMode: "replace",
+            };
+
+            self.getStyle = function () {
+                var marginLeft = ((-SubscriberConfig.width + 5) * self.count);
+
+                return {
+                    width: self.isFullscreen ? "100%" : SubscriberConfig.width + "px",
+                    height: self.isFullscreen ? "100%" : SubscriberConfig.height + "px",
+                    'margin-left': self.isFullscreen ? 0 : marginLeft + "px",
+                };
+            };
+
+            self.toggleVideo = function () {
+                if (!self.session) {
+                    return;
+                }
+
+                self.session.subscribeToVideo(!self.subscribingToVideo);
+                self.subscribingToVideo = !self.subscribingToVideo;
+
+                return self.subscribingToVideo;
+            };
+        };
+    }
+
+    angular.module("osdOpentok")
+        .service("Subscriber", Subscriber);
+
 })();

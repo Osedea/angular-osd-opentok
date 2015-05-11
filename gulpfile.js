@@ -10,10 +10,10 @@ var gulp = require('gulp'),
 var paths = {
     js: [
         'src/app.js',
-        'src/config.js',
         'templates/main.js',
+        'src/config/**/*.js',
         'src/angular-osd-opentok.js',
-        'src/decorators/**/*.js'
+        'src/services/**/*.js'
     ],
     test: [
         'bower_components/angular/angular.js',
