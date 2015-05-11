@@ -11,13 +11,10 @@
         opentokDiv.style.height = parseInt(opentokDiv.offsetWidth * 3 / 5) + "px";
 
         $scope.config = OpentokConfig;
-        $scope.systemRequirementsMet = !!OT.checkSystemRequirements();
-        $scope.mediaAccessAllowed = false;
         $scope.publishingVideo = Publisher.publishingVideo;
-        $scope.isModerator = false;
+        $scope.isModerator = true;
         $scope.showPublisherTile = true;
         $scope.publisher = Publisher;
-
 
         /* Streams that are in the session but not necessarily being subscribed to */
         $scope.streamsAvailable = [];
@@ -27,18 +24,15 @@
 
         //OT.setLogLevel(OT.DEBUG);
 
-        //OpenTok.createToken({ sid: appointment.opentok_sid })
-
-        $scope.isModerator = true;
-
         $scope.init = function () {
             // Required for Opentop > 2.2
             var a = new XMLHttpRequest();
+
             XMLHttpRequest.prototype = Object.getPrototypeOf(a);
 
             OT.registerScreenSharingExtension('chrome', OpentokConfig.screenshare.extensionId);
 
-            session = OT.initSession(config.credentials.apiKey, config.credentials.sid, function (response) {
+            session = OT.initSession(OpentokConfig.credentials.apiKey, OpentokConfig.credentials.sid, function (response) {
                 logError(response);
             });
 
@@ -47,7 +41,7 @@
             self.publish();
         };
 
-        $scope.screenshare = function() {
+        $scope.screenshare = function () {
             OT.checkScreenSharingCapability(function (response) {
                 if (!response.supported || response.extensionRegistered === false) {
                     alert('This browser does not support screen sharing.');
@@ -121,7 +115,7 @@
 
         function accessDenied() {
             $scope.mediaAccessAllowed = false;
-            $scope.openModal('#access-denied');
+            $scope.onAccessDenied();
         }
 
         /* This event is received when a remote stream is created */
@@ -167,7 +161,7 @@
 
         $scope.subscribe = function (stream) {
             if (!$scope.mediaAccessAllowed) {
-                $scope.openModal('#camera-access-required');
+                $scope.onAccessRequired();
                 return;
             }
 
@@ -176,7 +170,7 @@
             }
 
             if ($scope.subscribers.length >= OpentokConfig.maxSubscribers) {
-                $scope.openModal('#subscriber-limit-modal');
+                $scope.onSubscriberLimitReached();
                 return;
             }
 
@@ -272,7 +266,13 @@
             replace: true,
             templateUrl: '/templates/angular-osd-opentok.html',
             controller: 'LiveConsultationCtrl',
-            controllerAs: 'liveCtrl'
+            controllerAs: 'liveCtrl',
+            scope: {
+                onAccessDenied: '&',
+                onAccessRequired: '&',
+                onSubscriberLimitReached: '&',
+                mediaAccessAllowed: '=',
+            },
         };
     }
 
