@@ -33,6 +33,6 @@
         return self;
     }
 
-    angular.module('chaya')
+    angular.module("osdOpentok")
         .factory('Publisher', Publisher);
 })();

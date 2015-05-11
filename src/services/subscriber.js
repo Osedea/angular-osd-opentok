@@ -43,7 +43,7 @@
         };
     }
 
-    angular.module('chaya')
+    angular.module("osdOpentok")
         .service("Subscriber", Subscriber);
 
 })();

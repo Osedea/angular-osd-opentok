@@ -340,7 +340,7 @@
         };
     }
 
-    angular.module('chaya')
+    angular.module('osdOpentok')
         .directive('liveConsultation', liveConsultation)
         .controller('LiveConsultationCtrl', LiveConsultationCtrl);
 })();
