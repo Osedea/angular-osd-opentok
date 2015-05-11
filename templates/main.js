@@ -4,7 +4,7 @@
 
     // @ngInject
     function osdOpentok($templateCache) {
-        $templateCache.put("template/angular-osd-opentok.html", "" +
+        $templateCache.put("/templates/angular-osd-opentok.html", "" +
                 "<div id=\"opentokDiv\" class=\"video-block\">" +
                     "<div class=\"subscriber-list\">" +
                         "<div id=\"subscriber-{{ $index + 1 }}\"" +
