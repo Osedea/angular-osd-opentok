@@ -20,16 +20,8 @@
             return DataManager.subscribers;
         };
 
-        $scope.screenshare = function () {
-            OT.checkScreenSharingCapability(function (response) {
-                if (!response.supported || response.extensionRegistered === false) {
-                    alert('This browser does not support screen sharing.');
-                } else if (response.extensionInstalled === false) {
-                    alert('Please install the screen sharing extension and load this page over HTTPS.');
-                } else {
-                    SessionManager.publish();
-                }
-            });
+        $scope.publishScreen = function () {
+            SessionManager.publishScreen();
         };
 
         $scope.subscribe = function (stream) {

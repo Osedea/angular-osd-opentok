@@ -10,19 +10,12 @@
         OT.setLogLevel(OT.DEBUG);
 
         self.init = function () {
-            // Set the container size for the consultation
-            var opentokDiv = document.getElementById('opentokDiv');
-            opentokDiv.style.height = parseInt(opentokDiv.offsetWidth * 3 / 5) + "px";
-
-            // Required for Opentok > 2.2
-            var a = new XMLHttpRequest();
-            XMLHttpRequest.prototype = Object.getPrototypeOf(a);
+            setContainerSize();
+            resetXmlHttpRequest();
 
             OT.registerScreenSharingExtension('chrome', OpentokConfig.screenshare.extensionId);
 
-            session = OT.initSession(OpentokConfig.credentials.apiKey, OpentokConfig.credentials.sid, function (response) {
-                logError(response);
-            });
+            session = OT.initSession(OpentokConfig.credentials.apiKey, OpentokConfig.credentials.sid, logError);
 
             setConnectionCallbacks();
 
@@ -37,6 +30,18 @@
                 Publisher.setSession(OT.initPublisher(Publisher.divId, Publisher.options, logError));
 
                 session.publish(Publisher.session, logError);
+            });
+        };
+
+        self.publishScreen = function() {
+            OT.checkScreenSharingCapability(function (response) {
+                if (!response.supported || response.extensionRegistered === false) {
+                    alert('This browser does not support screen sharing.');
+                } else if (response.extensionInstalled === false) {
+                    alert('Please install the screen sharing extension and load this page over HTTPS.');
+                } else {
+                    self.publish();
+                }
             });
         };
 
@@ -134,6 +139,17 @@
                     }
                 }
             });
+        }
+
+        function setContainerSize() {
+            var opentokDiv = document.getElementById('opentokDiv');
+            opentokDiv.style.height = parseInt(opentokDiv.offsetWidth * 3 / 5) + "px";
+        }
+
+        // Required for Opentok > 2.2
+        function resetXmlHttpRequest() {
+            var a = new XMLHttpRequest();
+            XMLHttpRequest.prototype = Object.getPrototypeOf(a);
         }
 
         function logError(error) {
