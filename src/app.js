@@ -1,5 +1,3 @@
 (function() {
-    var osdOpentok = angular.module('osdOpentok', [
-        'ngLodash'
-    ]);
+    var osdOpentok = angular.module('osdOpentok', []);
 })();
