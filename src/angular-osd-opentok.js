@@ -31,12 +31,12 @@
 
         $scope.isModerator = true;
 
-        self.init = function () {
+        $scope.init = function () {
             // Required for Opentop > 2.2
             var a = new XMLHttpRequest();
             XMLHttpRequest.prototype = Object.getPrototypeOf(a);
 
-            OT.registerScreenSharingExtension('chrome', $scope.config.screenshare.extensionId);
+            OT.registerScreenSharingExtension('chrome', OpentokConfig.screenshare.extensionId);
 
             session = OT.initSession(config.credentials.apiKey, config.credentials.sid, function (response) {
                 logError(response);
@@ -60,7 +60,7 @@
         };
 
         self.publish = function () {
-            session.connect($scope.config.credentials.token, function (error) {
+            session.connect(OpentokConfig.credentials.token, function (error) {
                 logError(error);
 
                 Publisher.session = OT.initPublisher(Publisher.divId, Publisher.options, logError);
@@ -175,7 +175,7 @@
                 return;
             }
 
-            if ($scope.subscribers.length >= $scope.config.maxSubscribers) {
+            if ($scope.subscribers.length >= OpentokConfig.maxSubscribers) {
                 $scope.openModal('#subscriber-limit-modal');
                 return;
             }
