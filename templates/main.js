@@ -8,10 +8,10 @@
                 "<div id=\"opentokDiv\" class=\"video-block\">" +
                     "<div class=\"subscriber-list\">" +
                         "<div id=\"subscriber-{{ $index + 1 }}\"" +
-                             "ng-repeat=\"subscriber in subscribers\"" +
+                             "ng-repeat=\"subscriber in getSubscribers()\"" +
                              "ng-class=\"subscriber.isFullscreen ? 'main-subscriber' : 'thumbnail-subscriber'\"" +
                              "ng-click=\"switchFullscreen(subscriber)\"" +
-                             "ng-style=\"getSubscriberStyle(subscriber)\">" +
+                             "ng-style=\"subscriber.getStyle()\">" +
                         "</div>" +
                     "</div>" +
                     "<div id=\"publisherDiv\"" +
@@ -23,7 +23,7 @@
                     "<div class=\"dropup\">" +
                         "<button class=\"btn btn-primary\" type=\"button\" id=\"dropdownMenu2\" data-toggle=\"dropdown\"" +
                                 "aria-expanded=\"true\">" +
-                            "Users ( {{ streamsAvailable.length + 1 }} ) <span class=\"caret\"></span>" +
+                            "Users ( {{ getStreamsAvailable().length + 1 }} ) <span class=\"caret\"></span>" +
                         "</button>" +
                         "<ul class=\"dropdown-menu\" role=\"menu\" aria-labelledby=\"dropdownMenu2\">" +
                             "<li>" +
@@ -36,7 +36,7 @@
                                     "</div>" +
                                 "</a>" +
                             "</li>" +
-                            "<li ng-repeat=\"stream in streamsAvailable | streamsList:isModerator\">" +
+                            "<li ng-repeat=\"stream in getStreamsAvailable()\">" +
                                 "<a ng-click=\"isBeingSubscribedTo(stream) ? forceDisconnect(stream) : subscribe(stream)\"" +
                                    "ng-show=\"isModerator\">" +
                                     "<span>{{ stream.name }}</span>" +

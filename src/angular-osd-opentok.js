@@ -3,13 +3,7 @@
     'use strict';
 
     // @ngInject
-    function LiveConsultationCtrl($scope, $timeout, Subscriber, Publisher, OpentokConfig) {
-        var session = null;
-        var self = this;
-
-        var opentokDiv = document.getElementById('opentokDiv');
-        opentokDiv.style.height = parseInt(opentokDiv.offsetWidth * 3 / 5) + "px";
-
+    function LiveConsultationCtrl($scope, SessionManager, DataManager, Publisher, OpentokConfig) {
         $scope.config = OpentokConfig;
         $scope.publishingVideo = Publisher.publishingVideo;
         $scope.isModerator = true;
@@ -17,28 +11,13 @@
         $scope.publisher = Publisher;
 
         /* Streams that are in the session but not necessarily being subscribed to */
-        $scope.streamsAvailable = [];
+        $scope.getStreamsAvailable = function () {
+            return DataManager.streamsAvailable;
+        };
 
         /* Streams that are in the session and being subscribed to */
-        $scope.subscribers = [];
-
-        //OT.setLogLevel(OT.DEBUG);
-
-        $scope.init = function () {
-            // Required for Opentok > 2.2
-            var a = new XMLHttpRequest();
-
-            XMLHttpRequest.prototype = Object.getPrototypeOf(a);
-
-            OT.registerScreenSharingExtension('chrome', OpentokConfig.screenshare.extensionId);
-
-            session = OT.initSession(OpentokConfig.credentials.apiKey, OpentokConfig.credentials.sid, function (response) {
-                logError(response);
-            });
-
-            setConnectionCallbacks();
-
-            self.publish();
+        $scope.getSubscribers = function () {
+            return DataManager.subscribers;
         };
 
         $scope.screenshare = function () {
@@ -48,217 +27,58 @@
                 } else if (response.extensionInstalled === false) {
                     alert('Please install the screen sharing extension and load this page over HTTPS.');
                 } else {
-                    self.publish();
+                    SessionManager.publish();
                 }
             });
         };
-
-        self.publish = function () {
-            session.connect(OpentokConfig.credentials.token, function (error) {
-                logError(error);
-
-                Publisher.session = OT.initPublisher(Publisher.divId, Publisher.options, logError);
-
-                setPublisherCallbacks();
-
-                session.publish(Publisher.session, logError);
-            });
-        };
-
-        self.subscribe = function (stream, signalSubscribe) {
-            var subscriber = new Subscriber($scope.subscribers.length + 1);
-
-            // This must be done on its own so the DOM updates with a new subscriber div
-            $timeout(function () {
-                Publisher.isFullscreen = false;
-                $scope.subscribers.push(subscriber);
-            });
-
-            $timeout(function () {
-                subscriber.session = session.subscribe(stream, subscriber.divId, subscriber.options);
-
-                /* Send signal to other user to subscribe */
-                if (signalSubscribe) {
-                    session.signal({type: 'subscribe', to: stream.connection});
-                }
-            }, 100);
-        };
-
-        self.unsubscribe = function (stream, signalDisconnect) {
-            if (signalDisconnect) {
-                /* Send signal to other user to disconnect */
-                session.signal({type: 'disconnect', to: stream.connection});
-            }
-
-            session.unsubscribe(stream);
-        };
-
-        self.forceDisconnect = function (stream) {
-            if (session.capabilities.forceDisconnect != 1) {
-                return;
-            }
-
-            session.forceUnpublish(stream);
-            session.forceDisconnect(stream);
-        };
-
-        self.isModerator = function () {
-            return session.capabilities.forceDisconnect == 1;
-        };
-
-        /* This event is received after the publisher is initiated */
-        function accessAllowed() {
-            $timeout(function () {
-                $scope.mediaAccessAllowed = true;
-            });
-        }
-
-        function accessDenied() {
-            $scope.mediaAccessAllowed = false;
-            $scope.onAccessDenied();
-        }
-
-        /* This event is received when a remote stream is created */
-        function streamCreated(event) {
-            $timeout(function () {
-                var stream = event.stream;
-
-                if (getStreamByConnection(stream.connection)) {
-                    return;
-                }
-
-                $scope.streamsAvailable.push(stream);
-            });
-        }
-
-        /* This event is received when a remote stream disconnects */
-        function streamDestroyed(event) {
-            removeStreamByConnection(event.stream.connection);
-            $scope.$apply();
-        }
-
-        /* This event is received when a remote connection is destroyed */
-        function connectionDestroyed(event) {
-            removeStreamByConnection(event.connection);
-            $scope.$apply();
-        }
-
-        /* This event is received when a remote stream signals us to connect */
-        function signalSubscribe(event) {
-            var stream = getStreamByConnection(event.from);
-            self.subscribe(stream, false);
-            $scope.$apply();
-        }
-
-        /* This event is received when a remote stream signals us to disconnect */
-        function signalDisconnect(event) {
-            session.disconnect();
-
-            $scope.streamsAvailable = [];
-            $scope.subscribers = [];
-            $scope.$apply();
-        }
 
         $scope.subscribe = function (stream) {
+            /* Access must be granted to camera and video to start subscribing */
             if (!$scope.mediaAccessAllowed) {
                 $scope.onAccessRequired();
                 return;
             }
 
+            /* Only Moderators can subscribe to streams */
             if (!$scope.isModerator) {
                 return;
             }
 
-            if ($scope.subscribers.length >= OpentokConfig.maxSubscribers) {
+            /* Check to see if subscriber limit is reached */
+            if (DataManager.subscribers.length >= OpentokConfig.maxSubscribers) {
                 $scope.onSubscriberLimitReached();
                 return;
             }
 
-            self.subscribe(stream, true);
+            SessionManager.subscribe(stream, true);
         };
 
         $scope.switchFullscreen = function (subscriber) {
-            $scope.subscribers.forEach(function (subscriber) {
-                subscriber.isFullscreen = false;
-            });
-
-            Publisher.isFullscreen = false;
-            subscriber.isFullscreen = true;
-        };
-
-        $scope.getSubscriberStyle = function (s) {
-            return s.getStyle();
+            DataManager.switchFullscreen(subscriber);
         };
 
         $scope.forceDisconnect = function (stream) {
-            self.unsubscribe(stream, true);
-
-            removeSubscriberByStream(stream);
+            SessionManager.unsubscribe(stream, true);
+            DataManager.removeSubscriberByStream(stream);
         };
 
         $scope.isBeingSubscribedTo = function (stream) {
-            return $scope.subscribers.some(function (s) {
+            return DataManager.subscribers.some(function (s) {
                 return s.session && s.session.stream && s.session.stream.id == stream.id;
             });
         };
 
-        function removeStreamByConnection(connection) {
-            var stream = getStreamByConnection(connection);
+        /* Set publisher's callback methods */
+        Publisher.onAccessAllowed = function () {
+            $scope.mediaAccessAllowed = true;
+            $scope.$apply();
+        };
 
-            if (stream) {
-                removeSubscriberByStream(stream);
-                $scope.streamsAvailable = $scope.streamsAvailable.filter(function (s) {
-                    return stream.id != s.id;
-                });
-            }
-
-            if ($scope.subscribers.length) {
-                $scope.switchFullscreen($scope.subscribers[0]);
-            } else {
-                Publisher.isFullscreen = true;
-            }
-        }
-
-        function removeSubscriberByStream(stream) {
-            $scope.subscribers = $scope.subscribers.filter($scope.subscribers, function (s) {
-                return s.session.stream && s.session.stream.id != stream.id;
-            });
-        }
-
-        function getStreamByConnection(connection) {
-            return $scope.streamsAvailable.filter($scope.streamsAvailable, function (s) {
-                return s.connection.id === connection.id;
-            }).pop();
-        }
-
-        function setConnectionCallbacks() {
-            session.on({
-                streamCreated: streamCreated,
-                streamDestroyed: streamDestroyed,
-                connectionDestroyed: connectionDestroyed,
-                signal: function (event) {
-                    if (event.type == 'signal:subscribe') {
-                        signalSubscribe(event);
-                    }
-                    if (event.type == 'signal:disconnect') {
-                        signalDisconnect(event);
-                    }
-                },
-            });
-        }
-
-        function setPublisherCallbacks() {
-            Publisher.session.on({
-                accessAllowed: accessAllowed,
-                accessDenied: accessDenied,
-            });
-        }
-
-        function logError(error) {
-            if (error) {
-                console.log("Error: ", error);
-            }
-        }
+        Publisher.onAccessDenied = function () {
+            $scope.mediaAccessAllowed = false;
+            $scope.onAccessDenied();
+            $scope.$apply();
+        };
     }
 
     // @ngInject

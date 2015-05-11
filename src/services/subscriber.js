@@ -1,4 +1,4 @@
-(function() {
+(function () {
 
     'use strict';
 
@@ -17,7 +17,7 @@
                 height: self.isFullscreen ? "100%" : SubscriberConfig.height + "px",
                 subscribeToVideo: true,
                 subscribeToAudio: true,
-                insertMode: "replace",
+                insertMode: "replace"
             };
 
             self.getStyle = function () {
@@ -26,7 +26,7 @@
                 return {
                     width: self.isFullscreen ? "100%" : SubscriberConfig.width + "px",
                     height: self.isFullscreen ? "100%" : SubscriberConfig.height + "px",
-                    'margin-left': self.isFullscreen ? 0 : marginLeft + "px",
+                    'margin-left': self.isFullscreen ? 0 : marginLeft + "px"
                 };
             };
 

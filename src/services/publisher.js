@@ -6,6 +6,8 @@
     function Publisher(PublisherConfig) {
         var self = this;
 
+        self.onAccessAllowed = null;
+        self.onAccessDenied = null;
         self.session = null;
         self.publishingVideo = false;
         self.stream = null;
@@ -18,7 +20,15 @@
             publishVideo: true,
             publishAudio: true,
             insertMode: "append",
-            name: PublisherConfig.name
+        };
+
+        self.setSession = function(session) {
+            self.session = session;
+
+            self.session.on({
+                accessAllowed: self.onAccessAllowed,
+                accessDenied: self.onAccessDenied
+            });
         };
 
         self.toggleVideo = function () {

@@ -1,9 +1,9 @@
-(function() {
+(function () {
     var testModule = angular.module('testModule', [
         'osdOpentok'
     ]);
 
-       // @ngInject
+    // @ngInject
     function resourceConfig(OpentokConfigProvider) {
         OpentokConfigProvider
             .setMaxSubscribers(5);
