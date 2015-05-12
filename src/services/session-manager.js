@@ -40,27 +40,32 @@
                 } else if (response.extensionInstalled === false) {
                     alert('Please install the screen sharing extension and load this page over HTTPS.');
                 } else {
-                    self.publish();
+                    var publisher = OT.initPublisher('publisherScreenDiv', {
+                        videoSource: 'screen',
+                        name: 'Screenshare'
+                    }, logError);
+
+                    session.publish(publisher, logError);
                 }
             });
         };
 
         self.subscribe = function (stream, signalSubscribe) {
+            // This must be done in a timeout so the DOM updates with a new subscriber div
             var subscriber = new Subscriber(DataManager.subscribers.length + 1);
 
-            Publisher.isFullscreen = false;
-
-            // This must be done on its own so the DOM updates with a new subscriber div
             $timeout(function () {
-                DataManager.subscribers.push(subscriber);
+                Publisher.isFullscreen = false;
 
-                if (DataManager.subscribers.length >= OpentokConfig.maxVideoSubscribers) {
-                    subscriber.subscribeToVideo(false);
-                }
+                DataManager.subscribers.push(subscriber);
             });
 
             $timeout(function () {
                 subscriber.session = session.subscribe(stream, subscriber.divId, subscriber.options);
+
+                if (DataManager.subscribers.length > OpentokConfig.maxVideoSubscribers) {
+                    subscriber.subscribeToAudio(false);
+                }
 
                 /* Send signal to other user to subscribe */
                 if (signalSubscribe) {
@@ -94,9 +99,7 @@
         /* This event is received when a remote stream is created */
         var streamCreated = function (event) {
             $timeout(function () {
-                if (!DataManager.getStreamByConnection(event.stream.connection)) {
-                    DataManager.streamsAvailable.push(event.stream);
-                }
+                DataManager.streamsAvailable.push(event.stream);
             });
         };
 

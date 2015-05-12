@@ -17,7 +17,17 @@
                     s.isFullscreen = false;
                 });
 
-                subscriber.isFullscreen = true;
+                if (subscriber) {
+                    subscriber.isFullscreen = true;
+                } else {
+                    Publisher.isFullscreen = true;
+                }
+            });
+        };
+
+        self.isBeingSubscribedTo = function(stream) {
+            return self.subscribers.some(function (s) {
+                return s.session && s.session.stream && s.session.stream.id == stream.id;
             });
         };
 
@@ -33,7 +43,6 @@
             });
 
             return streams.length ? streams[0] : null;
-
         };
 
         self.removeStreamByConnection = function (connection) {
@@ -41,16 +50,13 @@
 
             if (stream) {
                 self.removeSubscriberByStream(stream);
+
                 self.streamsAvailable = self.streamsAvailable.filter(function (s) {
                     return stream.id != s.id;
                 });
             }
 
-            if (self.subscribers.length) {
-                self.switchFullscreen(self.subscribers[0]);
-            } else {
-                Publisher.isFullscreen = true;
-            }
+            self.switchFullscreen(self.subscribers.pop());
         };
 
         return self;

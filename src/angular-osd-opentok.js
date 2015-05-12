@@ -20,9 +20,14 @@
             return DataManager.subscribers;
         };
 
-        $scope.publishScreen = function () {
-            SessionManager.publishScreen();
-        };
+        /* Returns true if the given stream is being subscribed to */
+        $scope.isBeingSubscribedTo = DataManager.isBeingSubscribedTo;
+
+        /* Sets the given subscriber to fullscreen */
+        $scope.switchFullscreen = DataManager.switchFullscreen;
+
+        /* Starts a screensharing stream */
+        $scope.publishScreen = SessionManager.publishScreen;
 
         $scope.subscribe = function (stream) {
             /* Access must be granted to camera and video to start subscribing */
@@ -45,19 +50,9 @@
             SessionManager.subscribe(stream, true);
         };
 
-        $scope.switchFullscreen = function (subscriber) {
-            DataManager.switchFullscreen(subscriber);
-        };
-
         $scope.forceDisconnect = function (stream) {
             SessionManager.unsubscribe(stream, true);
             DataManager.removeSubscriberByStream(stream);
-        };
-
-        $scope.isBeingSubscribedTo = function (stream) {
-            return DataManager.subscribers.some(function (s) {
-                return s.session && s.session.stream && s.session.stream.id == stream.id;
-            });
         };
 
         /* Set publisher's callback methods */

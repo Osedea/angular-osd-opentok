@@ -21,7 +21,7 @@
             };
 
             self.getStyle = function () {
-                var marginLeft = ((-SubscriberConfig.width + 5) * self.count);
+                var marginLeft = ((-SubscriberConfig.width + 10) * self.count);
 
                 return {
                     width: self.isFullscreen ? "100%" : SubscriberConfig.width + "px",
