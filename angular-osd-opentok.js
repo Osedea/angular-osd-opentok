@@ -73,7 +73,8 @@
         var self = this;
 
         var config = {
-            maxSubscribers: 2,
+            maxVideoSubscribers: 2,
+            maxAudioSubscribers: 2,
             credentials: {}
         };
 
@@ -220,6 +221,7 @@
         /* Set publisher's callback methods */
         Publisher.onAccessAllowed = function () {
             $scope.mediaAccessAllowed = true;
+            $scope.onMediaAccessAllowed();
             $scope.$apply();
         };
 
@@ -242,7 +244,7 @@
                 onAccessDenied: '&',
                 onAccessRequired: '&',
                 onSubscriberLimitReached: '&',
-                mediaAccessAllowed: '='
+                onMediaAccessAllowed: '&'
             }
         };
     }
@@ -507,8 +509,9 @@
         }
 
         function setContainerSize() {
+            var height = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
             var opentokDiv = document.getElementById('opentokDiv');
-            opentokDiv.style.height = parseInt(opentokDiv.offsetWidth * 3 / 5) + "px";
+            opentokDiv.style.height = (height - 66) + 'px';
         }
 
         // Required for Opentok > 2.2

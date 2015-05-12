@@ -142,8 +142,9 @@
         }
 
         function setContainerSize() {
+            var height = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
             var opentokDiv = document.getElementById('opentokDiv');
-            opentokDiv.style.height = parseInt(opentokDiv.offsetWidth * 3 / 5) + "px";
+            opentokDiv.style.height = (height - 66) + 'px';
         }
 
         // Required for Opentok > 2.2

@@ -11,7 +11,8 @@
         var self = this;
 
         var config = {
-            maxSubscribers: 2,
+            maxVideoSubscribers: 2,
+            maxAudioSubscribers: 2,
             credentials: {}
         };
 

@@ -63,6 +63,7 @@
         /* Set publisher's callback methods */
         Publisher.onAccessAllowed = function () {
             $scope.mediaAccessAllowed = true;
+            $scope.onMediaAccessAllowed();
             $scope.$apply();
         };
 
@@ -85,7 +86,7 @@
                 onAccessDenied: '&',
                 onAccessRequired: '&',
                 onSubscriberLimitReached: '&',
-                mediaAccessAllowed: '='
+                onMediaAccessAllowed: '&'
             }
         };
     }
