@@ -9,51 +9,55 @@
     // @ngInject
     function osdOpentok($templateCache) {
         $templateCache.put("/templates/angular-osd-opentok.html", "" +
-                "<div id=\"opentokDiv\" class=\"video-block\">" +
-                    "<div class=\"subscriber-list\">" +
-                        "<div id=\"subscriber-{{ $index + 1 }}\"" +
-                             "ng-repeat=\"subscriber in getSubscribers()\"" +
-                             "ng-class=\"subscriber.isFullscreen ? 'main-subscriber' : 'thumbnail-subscriber'\"" +
-                             "ng-click=\"switchFullscreen(subscriber)\"" +
-                             "ng-style=\"subscriber.getStyle()\">" +
-                        "</div>" +
-                    "</div>" +
-                    "<div id=\"publisherDiv\"" +
-                         "ng-show=\"showPublisherTile\"" +
-                         "ng-class=\"{ 'fullscreen' : publisher.isFullscreen }\"" +
-                         "class=\"publisher\">" +
 
-                    "</div>" +
-                    "<div class=\"dropup\">" +
-                        "<button class=\"btn btn-primary\" type=\"button\" id=\"dropdownMenu2\" data-toggle=\"dropdown\"" +
-                                "aria-expanded=\"true\">" +
-                            "Users ( {{ getStreamsAvailable().length + 1 }} ) <span class=\"caret\"></span>" +
-                        "</button>" +
-                        "<ul class=\"dropdown-menu\" role=\"menu\" aria-labelledby=\"dropdownMenu2\">" +
-                            "<li>" +
-                                "<a ng-click=\"showPublisherTile = !showPublisherTile\"" +
-                                   "ng-disabled=\"isSubscribing() && !isBeingSubscribedTo(stream)\">" +
-                                    "<span>You</span>" +
-
-                                    "<div class=\"pull-right\">" +
-                                        "<i class=\"fa\" ng-class=\"showPublisherTile ? 'fa-compress' : 'fa-expand'\"></i>" +
-                                    "</div>" +
-                                "</a>" +
-                            "</li>" +
-                            "<li ng-repeat=\"stream in getStreamsAvailable()\">" +
-                                "<a ng-click=\"isBeingSubscribedTo(stream) ? forceDisconnect(stream) : subscribe(stream)\"" +
-                                   "ng-show=\"isModerator\">" +
-                                    "<span>{{ stream.name }}</span>" +
-
-                                    "<div class=\"pull-right\">" +
-                                        "<i class=\"fa\" ng-class=\"isBeingSubscribedTo(stream) ? 'fa-stop' : 'fa-play'\"></i>" +
-                                    "</div>" +
-                                "</a>" +
-                            "</li>" +
-                        "</ul>" +
+            "<div id=\"opentokDiv\" class=\"video-block\">" +
+                    //"<button class=\"btn btn-primary\" ng-click=\"publishScreen()\" style=\"position: relative; z-index: 100;\">Screenshare</button>" +
+                "<div class=\"subscriber-list\">" +
+                    "<div id=\"subscriber-{{ $index + 1 }}\"" +
+                         "ng-repeat=\"subscriber in getSubscribers()\"" +
+                         "ng-class=\"subscriber.isFullscreen ? 'main-subscriber' : 'thumbnail-subscriber'\"" +
+                         "ng-click=\"switchFullscreen(subscriber)\"" +
+                         "ng-style=\"subscriber.getStyle()\">" +
                     "</div>" +
                 "</div>" +
-            "");
+                "<div id=\"publisherDiv\"" +
+                     "ng-show=\"showPublisherTile\"" +
+                     "ng-class=\"{ 'fullscreen' : publisher.isFullscreen }\"" +
+                     "class=\"publisher\">" +
+                "</div>" +
+                "<div id=\"publisherScreenDiv\"" +
+                    "class=\"publisher\">" +
+                "</div>" +
+                "<div class=\"dropup\">" +
+                    "<button class=\"btn btn-primary\" type=\"button\" id=\"dropdownMenu2\" data-toggle=\"dropdown\"" +
+                            "aria-expanded=\"true\">" +
+                        "Users ( {{ getStreamsAvailable().length + 1 }} ) <span class=\"caret\"></span>" +
+                    "</button>" +
+                    "<ul class=\"dropdown-menu\" role=\"menu\" aria-labelledby=\"dropdownMenu2\">" +
+                        "<li>" +
+                            "<a ng-click=\"showPublisherTile = !showPublisherTile\"" +
+                               "ng-disabled=\"isSubscribing() && !isBeingSubscribedTo(stream)\">" +
+                                "<span>You</span>" +
+
+                                "<div class=\"pull-right\">" +
+                                    "<i class=\"fa\" ng-class=\"showPublisherTile ? 'fa-compress' : 'fa-expand'\"></i>" +
+                                "</div>" +
+                            "</a>" +
+                        "</li>" +
+                        "<li ng-repeat=\"stream in getStreamsAvailable()\">" +
+                            "<a ng-click=\"isBeingSubscribedTo(stream) ? forceDisconnect(stream) : subscribe(stream)\"" +
+                               "ng-show=\"isModerator\">" +
+                                "<span>{{ stream.name }}</span>" +
+
+                                "<div class=\"pull-right\">" +
+                                    "<i class=\"fa\" ng-class=\"isBeingSubscribedTo(stream) ? 'fa-stop' : 'fa-play'\"></i>" +
+                                "</div>" +
+                            "</a>" +
+                        "</li>" +
+                    "</ul>" +
+                "</div>" +
+            "</div>" +
+        "");
     }
 
     angular.module('osdOpentok')
@@ -178,9 +182,14 @@
             return DataManager.subscribers;
         };
 
-        $scope.publishScreen = function () {
-            SessionManager.publishScreen();
-        };
+        /* Returns true if the given stream is being subscribed to */
+        $scope.isBeingSubscribedTo = DataManager.isBeingSubscribedTo;
+
+        /* Sets the given subscriber to fullscreen */
+        $scope.switchFullscreen = DataManager.switchFullscreen;
+
+        /* Starts a screensharing stream */
+        $scope.publishScreen = SessionManager.publishScreen;
 
         $scope.subscribe = function (stream) {
             /* Access must be granted to camera and video to start subscribing */
@@ -203,19 +212,9 @@
             SessionManager.subscribe(stream, true);
         };
 
-        $scope.switchFullscreen = function (subscriber) {
-            DataManager.switchFullscreen(subscriber);
-        };
-
         $scope.forceDisconnect = function (stream) {
             SessionManager.unsubscribe(stream, true);
             DataManager.removeSubscriberByStream(stream);
-        };
-
-        $scope.isBeingSubscribedTo = function (stream) {
-            return DataManager.subscribers.some(function (s) {
-                return s.session && s.session.stream && s.session.stream.id == stream.id;
-            });
         };
 
         /* Set publisher's callback methods */
@@ -273,7 +272,17 @@
                     s.isFullscreen = false;
                 });
 
-                subscriber.isFullscreen = true;
+                if (subscriber) {
+                    subscriber.isFullscreen = true;
+                } else {
+                    Publisher.isFullscreen = true;
+                }
+            });
+        };
+
+        self.isBeingSubscribedTo = function(stream) {
+            return self.subscribers.some(function (s) {
+                return s.session && s.session.stream && s.session.stream.id == stream.id;
             });
         };
 
@@ -289,7 +298,6 @@
             });
 
             return streams.length ? streams[0] : null;
-
         };
 
         self.removeStreamByConnection = function (connection) {
@@ -297,16 +305,13 @@
 
             if (stream) {
                 self.removeSubscriberByStream(stream);
+
                 self.streamsAvailable = self.streamsAvailable.filter(function (s) {
                     return stream.id != s.id;
                 });
             }
 
-            if (self.subscribers.length) {
-                self.switchFullscreen(self.subscribers[0]);
-            } else {
-                Publisher.isFullscreen = true;
-            }
+            self.switchFullscreen(self.subscribers.pop());
         };
 
         return self;
@@ -374,8 +379,6 @@
         var self = this;
         var session = null;
 
-        OT.setLogLevel(OT.DEBUG);
-
         self.init = function () {
             setContainerSize();
             resetXmlHttpRequest();
@@ -409,27 +412,32 @@
                 } else if (response.extensionInstalled === false) {
                     alert('Please install the screen sharing extension and load this page over HTTPS.');
                 } else {
-                    self.publish();
+                    var publisher = OT.initPublisher('publisherScreenDiv', {
+                        videoSource: 'screen',
+                        name: 'Screenshare'
+                    }, logError);
+
+                    session.publish(publisher, logError);
                 }
             });
         };
 
         self.subscribe = function (stream, signalSubscribe) {
+            // This must be done in a timeout so the DOM updates with a new subscriber div
             var subscriber = new Subscriber(DataManager.subscribers.length + 1);
 
-            Publisher.isFullscreen = false;
-
-            // This must be done on its own so the DOM updates with a new subscriber div
             $timeout(function () {
-                DataManager.subscribers.push(subscriber);
+                Publisher.isFullscreen = false;
 
-                if (DataManager.subscribers.length >= OpentokConfig.maxVideoSubscribers) {
-                    subscriber.subscribeToVideo(false);
-                }
+                DataManager.subscribers.push(subscriber);
             });
 
             $timeout(function () {
                 subscriber.session = session.subscribe(stream, subscriber.divId, subscriber.options);
+
+                if (DataManager.subscribers.length > OpentokConfig.maxVideoSubscribers) {
+                    subscriber.subscribeToAudio(false);
+                }
 
                 /* Send signal to other user to subscribe */
                 if (signalSubscribe) {
@@ -463,9 +471,7 @@
         /* This event is received when a remote stream is created */
         var streamCreated = function (event) {
             $timeout(function () {
-                if (!DataManager.getStreamByConnection(event.stream.connection)) {
-                    DataManager.streamsAvailable.push(event.stream);
-                }
+                DataManager.streamsAvailable.push(event.stream);
             });
         };
 
@@ -563,7 +569,7 @@
             };
 
             self.getStyle = function () {
-                var marginLeft = ((-SubscriberConfig.width + 5) * self.count);
+                var marginLeft = ((-SubscriberConfig.width + 10) * self.count);
 
                 return {
                     width: self.isFullscreen ? "100%" : SubscriberConfig.width + "px",

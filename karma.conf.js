@@ -15,7 +15,7 @@ module.exports = function (config) {
         files: [
             './bower_components/angular/angular.js',
             'node_modules/karma-phantomjs-launcher/index.js',
-            'node_modules/angular-mocks/angular-mocks.js',
+            'bower_components/angular-mocks/angular-mocks.js',
             'bower_components/angular-resource/angular-resource.js',
             'angular-osd-opentok.js',
             'src/sample.js',
