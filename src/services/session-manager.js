@@ -7,13 +7,13 @@
         var self = this;
         var session = null;
 
-        OT.setLogLevel(OT.DEBUG);
-
         self.init = function () {
             setContainerSize();
             resetXmlHttpRequest();
 
-            OT.registerScreenSharingExtension('chrome', OpentokConfig.screenshare.extensionId);
+            if (OpentokConfig.screenshare) {
+                OT.registerScreenSharingExtension('chrome', OpentokConfig.screenshare.extensionId);
+            }
 
             session = OT.initSession(OpentokConfig.credentials.apiKey, OpentokConfig.credentials.sid, logError);
 
@@ -48,10 +48,15 @@
         self.subscribe = function (stream, signalSubscribe) {
             var subscriber = new Subscriber(DataManager.subscribers.length + 1);
 
+            Publisher.isFullscreen = false;
+
             // This must be done on its own so the DOM updates with a new subscriber div
             $timeout(function () {
-                Publisher.isFullscreen = false;
                 DataManager.subscribers.push(subscriber);
+
+                if (DataManager.subscribers.length >= OpentokConfig.maxVideoSubscribers) {
+                    subscriber.subscribeToVideo(false);
+                }
             });
 
             $timeout(function () {
@@ -61,7 +66,7 @@
                 if (signalSubscribe) {
                     session.signal({type: 'subscribe', to: stream.connection});
                 }
-            }, 100);
+            }, 50);
         };
 
         self.unsubscribe = function (stream, signalDisconnect) {

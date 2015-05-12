@@ -37,7 +37,7 @@
             }
 
             /* Check to see if subscriber limit is reached */
-            if (DataManager.subscribers.length >= OpentokConfig.maxSubscribers) {
+            if (DataManager.subscribers.length >= (OpentokConfig.maxVideoSubscribers + OpentokConfig.maxAudioSubscribers)) {
                 $scope.onSubscriberLimitReached();
                 return;
             }
