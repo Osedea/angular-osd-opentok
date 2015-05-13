@@ -3,28 +3,19 @@
     'use strict';
 
     //@ngInject
-    function DataManager($timeout, Publisher) {
+    function DataManager($timeout, Publisher, Subscriber) {
         var self = this;
 
         self.subscribers = [];
         self.streamsAvailable = [];
 
-        self.switchFullscreen = function (subscriber) {
-            $timeout(function () {
-                Publisher.isFullscreen = false;
+        self.createSubscriber = function() {
+            var subscriber = new Subscriber(self.subscribers.length + 1);
 
-                self.subscribers.forEach(function (s) {
-                    s.isFullscreen = false;
-                });
+            Publisher.isFullscreen = false;
+            self.subscribers.push(subscriber);
 
-                if (subscriber) {
-                    subscriber.isFullscreen = true;
-                } else if (self.subscribers.length) {
-                    self.subscribers[0].isFullscreen = true;
-                } else {
-                    Publisher.isFullscreen = true;
-                }
-            });
+            return subscriber;
         };
 
         self.isBeingSubscribedTo = function(stream) {
@@ -62,6 +53,25 @@
 
             self.switchFullscreen();
         };
+
+        self.switchFullscreen = function (subscriber) {
+            $timeout(function () {
+                Publisher.isFullscreen = false;
+
+                self.subscribers.forEach(function (s) {
+                    s.isFullscreen = false;
+                });
+
+                if (subscriber) {
+                    subscriber.isFullscreen = true;
+                } else if (self.subscribers.length) {
+                    self.subscribers[0].isFullscreen = true;
+                } else {
+                    Publisher.isFullscreen = true;
+                }
+            });
+        };
+
 
         return self;
     }

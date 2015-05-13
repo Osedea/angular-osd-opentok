@@ -55,19 +55,18 @@
 
         /* Subscribe to another user's published stream */
         self.subscribe = function (stream, signalSubscribe) {
-            var subscriber = new Subscriber(DataManager.subscribers.length + 1);
+            var subscriber = null;
 
             /* This must be done in a timeout so the DOM updates with a new subscriber div */
-            $timeout(function () {
-                Publisher.isFullscreen = false;
-                DataManager.subscribers.push(subscriber);
+            $timeout(function() {
+                subscriber = DataManager.createSubscriber();
             });
 
             $timeout(function () {
                 subscriber.session = session.subscribe(stream, subscriber.divId, subscriber.options);
 
                 if (DataManager.subscribers.length > OpentokConfig.maxVideoSubscribers) {
-                    subscriber.subscribeToAudio(false);
+                    subscriber.session.subscribeToVideo(false);
                 }
 
                 /* Send signal to other user to subscribe */
@@ -93,6 +92,7 @@
         self.forceDisconnect = function (stream) {
             if (self.isModerator()) {
                 DataManager.removeSubscriberByStream();
+
                 session.forceUnpublish(stream);
                 session.forceDisconnect(stream.connection);
             }

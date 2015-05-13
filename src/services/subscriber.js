@@ -7,8 +7,8 @@
         return function (count) {
             var self = this;
 
-            self.isFullscreen = count === 1;
             self.session = null;
+            self.isFullscreen = count === 1;
             self.count = count;
             self.divId = "subscriber-" + count;
 
@@ -21,7 +21,7 @@
             };
 
             self.getStyle = function () {
-                var marginLeft = ((-SubscriberConfig.width + 10) * self.count);
+                var marginLeft = -((SubscriberConfig.width + 5) * self.count);
 
                 return {
                     width: self.isFullscreen ? "100%" : SubscriberConfig.width + "px",

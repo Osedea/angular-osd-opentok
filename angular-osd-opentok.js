@@ -237,28 +237,19 @@
     'use strict';
 
     //@ngInject
-    function DataManager($timeout, Publisher) {
+    function DataManager($timeout, Publisher, Subscriber) {
         var self = this;
 
         self.subscribers = [];
         self.streamsAvailable = [];
 
-        self.switchFullscreen = function (subscriber) {
-            $timeout(function () {
-                Publisher.isFullscreen = false;
+        self.createSubscriber = function() {
+            var subscriber = new Subscriber(self.subscribers.length + 1);
 
-                self.subscribers.forEach(function (s) {
-                    s.isFullscreen = false;
-                });
+            Publisher.isFullscreen = false;
+            self.subscribers.push(subscriber);
 
-                if (subscriber) {
-                    subscriber.isFullscreen = true;
-                } else if (self.subscribers.length) {
-                    self.subscribers[0].isFullscreen = true;
-                } else {
-                    Publisher.isFullscreen = true;
-                }
-            });
+            return subscriber;
         };
 
         self.isBeingSubscribedTo = function(stream) {
@@ -296,6 +287,25 @@
 
             self.switchFullscreen();
         };
+
+        self.switchFullscreen = function (subscriber) {
+            $timeout(function () {
+                Publisher.isFullscreen = false;
+
+                self.subscribers.forEach(function (s) {
+                    s.isFullscreen = false;
+                });
+
+                if (subscriber) {
+                    subscriber.isFullscreen = true;
+                } else if (self.subscribers.length) {
+                    self.subscribers[0].isFullscreen = true;
+                } else {
+                    Publisher.isFullscreen = true;
+                }
+            });
+        };
+
 
         return self;
     }
@@ -410,19 +420,18 @@
 
         /* Subscribe to another user's published stream */
         self.subscribe = function (stream, signalSubscribe) {
-            var subscriber = new Subscriber(DataManager.subscribers.length + 1);
+            var subscriber = null;
 
             /* This must be done in a timeout so the DOM updates with a new subscriber div */
-            $timeout(function () {
-                Publisher.isFullscreen = false;
-                DataManager.subscribers.push(subscriber);
+            $timeout(function() {
+                subscriber = DataManager.createSubscriber();
             });
 
             $timeout(function () {
                 subscriber.session = session.subscribe(stream, subscriber.divId, subscriber.options);
 
                 if (DataManager.subscribers.length > OpentokConfig.maxVideoSubscribers) {
-                    subscriber.subscribeToAudio(false);
+                    subscriber.session.subscribeToVideo(false);
                 }
 
                 /* Send signal to other user to subscribe */
@@ -448,6 +457,7 @@
         self.forceDisconnect = function (stream) {
             if (self.isModerator()) {
                 DataManager.removeSubscriberByStream();
+
                 session.forceUnpublish(stream);
                 session.forceDisconnect(stream.connection);
             }
@@ -551,8 +561,8 @@
         return function (count) {
             var self = this;
 
-            self.isFullscreen = count === 1;
             self.session = null;
+            self.isFullscreen = count === 1;
             self.count = count;
             self.divId = "subscriber-" + count;
 
@@ -565,7 +575,7 @@
             };
 
             self.getStyle = function () {
-                var marginLeft = ((-SubscriberConfig.width + 10) * self.count);
+                var marginLeft = -((SubscriberConfig.width + 5) * self.count);
 
                 return {
                     width: self.isFullscreen ? "100%" : SubscriberConfig.width + "px",
