@@ -4,13 +4,13 @@
 
     // @ngInject
     function Subscriber(SubscriberConfig) {
-        return function (count) {
+        return function (thumbnailCount) {
             var self = this;
 
             self.session = null;
-            self.isFullscreen = count === 1;
-            self.count = count;
-            self.divId = "subscriber-" + count;
+            self.isFullscreen = thumbnailCount === 1;
+            self.thumbnailCount = thumbnailCount;
+            self.divId = "subscriber-" + thumbnailCount;
 
             self.options = {
                 width: self.isFullscreen ? "100%" : SubscriberConfig.width + "px",
@@ -21,7 +21,7 @@
             };
 
             self.getStyle = function () {
-                var marginLeft = -((SubscriberConfig.width + 5) * self.count);
+                var marginLeft = -((SubscriberConfig.width + 5) * self.thumbnailCount);
 
                 return {
                     width: self.isFullscreen ? "100%" : SubscriberConfig.width + "px",

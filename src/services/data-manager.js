@@ -69,9 +69,25 @@
                 } else {
                     Publisher.isFullscreen = true;
                 }
+
+                assignThumbnailCounts();
             });
         };
 
+        function assignThumbnailCounts() {
+            var currentThumbnail = 1;
+
+
+            if (!Publisher.isFullscreen) {
+                currentThumbnail = 2;
+            }
+
+            self.subscribers.forEach(function (subscriber) {
+                if (!subscriber.isFullScreen) {
+                    subscriber.thumbnailCount = currentThumbnail++;
+                }
+            });
+        }
 
         return self;
     }
