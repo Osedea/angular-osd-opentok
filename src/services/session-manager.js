@@ -7,6 +7,7 @@
         var self = this;
         var session = null;
 
+        /* Set basic configurations and init the session and publisher */
         self.init = function () {
             setContainerSize();
             resetXmlHttpRequest();
@@ -22,6 +23,7 @@
             self.publish();
         };
 
+        /* Start publishing your camera stream to the session */
         self.publish = function () {
             session.connect(OpentokConfig.credentials.token, function (error) {
                 logError(error);
@@ -33,6 +35,7 @@
             });
         };
 
+        /* Start publishing your screenshare stream to the session */
         self.publishScreen = function() {
             OT.checkScreenSharingCapability(function (response) {
                 if (!response.supported || response.extensionRegistered === false) {
@@ -50,13 +53,13 @@
             });
         };
 
+        /* Subscribe to another user's published stream */
         self.subscribe = function (stream, signalSubscribe) {
-            // This must be done in a timeout so the DOM updates with a new subscriber div
             var subscriber = new Subscriber(DataManager.subscribers.length + 1);
 
+            /* This must be done in a timeout so the DOM updates with a new subscriber div */
             $timeout(function () {
                 Publisher.isFullscreen = false;
-
                 DataManager.subscribers.push(subscriber);
             });
 
@@ -74,76 +77,86 @@
             }, 50);
         };
 
-        self.unsubscribe = function (stream, signalDisconnect) {
-            if (signalDisconnect) {
-                /* Send signal to other user to disconnect */
-                session.signal({type: 'disconnect', to: stream.connection});
+        /* Unsubscibe from stream and signal remote stream to unsubscribe from you */
+        self.unsubscribe = function (stream, signalUnsubscribe) {
+            if (signalUnsubscribe) {
+                /* Send signal to remote stream to unsubscribe from us */
+                session.signal({type: 'unsubscribe', to: stream.connection});
             }
 
             session.unsubscribe(stream);
+
+            DataManager.removeSubscriberByStream(stream);
         };
 
+        /* Forces a remove stream to disconnect and removes them from the list of available streams */
         self.forceDisconnect = function (stream) {
-            if (session.capabilities.forceDisconnect != 1) {
-                return;
+            if (self.isModerator()) {
+                DataManager.removeSubscriberByStream();
+                session.forceUnpublish(stream);
+                session.forceDisconnect(stream.connection);
             }
-
-            session.forceUnpublish(stream);
-            session.forceDisconnect(stream);
         };
 
+        /* Returns true if local session is moderator. This is based on their token */
         self.isModerator = function () {
-            return session.capabilities.forceDisconnect == 1;
+            return session && session.capabilities.forceDisconnect == 1;
         };
 
         /* This event is received when a remote stream is created */
-        var streamCreated = function (event) {
+        var onStreamCreated = function (event) {
             $timeout(function () {
                 DataManager.streamsAvailable.push(event.stream);
             });
         };
 
-        /* This event is received when a remote stream disconnects */
-        var streamDestroyed = function (event) {
-            $timeout(function () {
-                DataManager.removeStreamByConnection(event.stream.connection);
-            });
-        };
-
         /* This event is received when a remote connection is destroyed */
-        var connectionDestroyed = function (event) {
+        var onConnectionDestroyed = function (event) {
             $timeout(function () {
                 DataManager.removeStreamByConnection(event.connection);
             });
         };
 
+        /* This event is received when a remote stream disconnects */
+        var onStreamDestroyed = function (event) {
+            $timeout(function () {
+                DataManager.removeStreamByConnection(event.stream.connection);
+            });
+        };
+
         /* This event is received when a remote stream signals us to connect */
-        var signalSubscribe = function (event) {
+        var onSignalSubscribe = function (event) {
             $timeout(function () {
                 self.subscribe(DataManager.getStreamByConnection(event.from), false);
             });
         };
 
-        /* This event is received when a remote stream signals us to disconnect */
-        var signalDisconnect = function (event) {
-            $timeout(function () {
-                session.disconnect();
-                DataManager.streamsAvailable = [];
+        /* This event is received when a remote stream signals us to unsubscribe */
+        var onSignalUnsubscribe = function (event) {
+            var stream = DataManager.getStreamByConnection(event.from);
+            self.unsubscribe(stream, false);
+        };
+
+        /* This event is received when a remote stream signals us to unsubscribe */
+        var onSessionDisconnected = function (event) {
+            $timeout(function() {
                 DataManager.subscribers = [];
+                DataManager.streamsAvailable = [];
             });
         };
 
         function setConnectionCallbacks() {
             session.on({
-                streamCreated: streamCreated,
-                streamDestroyed: streamDestroyed,
-                connectionDestroyed: connectionDestroyed,
+                sessionDisconnected: onSessionDisconnected,
+                streamCreated: onStreamCreated,
+                streamDestroyed: onStreamDestroyed,
+                connectionDestroyed: onConnectionDestroyed,
                 signal: function (event) {
                     if (event.type == 'signal:subscribe') {
-                        signalSubscribe(event);
+                        onSignalSubscribe(event);
                     }
-                    if (event.type == 'signal:disconnect') {
-                        signalDisconnect(event);
+                    if (event.type == 'signal:unsubscribe') {
+                        onSignalUnsubscribe(event);
                     }
                 }
             });

@@ -19,6 +19,8 @@
 
                 if (subscriber) {
                     subscriber.isFullscreen = true;
+                } else if (self.subscribers.length) {
+                    self.subscribers[0].isFullscreen = true;
                 } else {
                     Publisher.isFullscreen = true;
                 }
@@ -35,6 +37,8 @@
             self.subscribers = self.subscribers.filter(function (s) {
                 return s.session.stream && s.session.stream.id != stream.id;
             });
+
+            self.switchFullscreen();
         };
 
         self.getStreamByConnection = function (connection) {
@@ -56,7 +60,7 @@
                 });
             }
 
-            self.switchFullscreen(self.subscribers.pop());
+            self.switchFullscreen();
         };
 
         return self;

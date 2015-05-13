@@ -9,50 +9,30 @@
     // @ngInject
     function osdOpentok($templateCache) {
         $templateCache.put("/templates/angular-osd-opentok.html", "" +
-
             "<div id=\"opentokDiv\" class=\"video-block\">" +
                     //"<button class=\"btn btn-primary\" ng-click=\"publishScreen()\" style=\"position: relative; z-index: 100;\">Screenshare</button>" +
                 "<div class=\"subscriber-list\">" +
-                    "<div id=\"subscriber-{{ $index + 1 }}\"" +
-                         "ng-repeat=\"subscriber in getSubscribers()\"" +
-                         "ng-class=\"subscriber.isFullscreen ? 'main-subscriber' : 'thumbnail-subscriber'\"" +
-                         "ng-click=\"switchFullscreen(subscriber)\"" +
-                         "ng-style=\"subscriber.getStyle()\">" +
-                    "</div>" +
+                    "<div id=\"subscriber-{{ $index + 1 }}\" ng-repeat=\"subscriber in getSubscribers()\" ng-class=\"subscriber.isFullscreen ? 'main-subscriber' : 'thumbnail-subscriber'\" ng-click=\"switchFullscreen(subscriber)\" ng-style=\"subscriber.getStyle()\"></div>" +
                 "</div>" +
-                "<div id=\"publisherDiv\"" +
-                     "ng-show=\"showPublisherTile\"" +
-                     "ng-class=\"{ 'fullscreen' : publisher.isFullscreen }\"" +
-                     "class=\"publisher\">" +
-                "</div>" +
-                "<div id=\"publisherScreenDiv\"" +
-                    "class=\"publisher\">" +
-                "</div>" +
+                "<div id=\"publisherDiv\" class=\"publisher\" ng-show=\"showPublisherTile\" ng-class=\"{ 'fullscreen' : publisher.isFullscreen }\"></div>" +
+                "<div id=\"publisherScreenDiv\" class=\"publisher\"></div>" +
                 "<div class=\"dropup\">" +
-                    "<button class=\"btn btn-primary\" type=\"button\" id=\"dropdownMenu2\" data-toggle=\"dropdown\"" +
-                            "aria-expanded=\"true\">" +
-                        "Users ( {{ getStreamsAvailable().length + 1 }} ) <span class=\"caret\"></span>" +
+                    "<button id=\"dropdownMenu2\" class=\"btn btn-primary\" type=\"button\" data-toggle=\"dropdown\" aria-expanded=\"true\">" +
+                        "Streams ( {{ getStreamsAvailable().length + 1 }} ) <span class=\"caret\"></span>" +
                     "</button>" +
                     "<ul class=\"dropdown-menu\" role=\"menu\" aria-labelledby=\"dropdownMenu2\">" +
-                        "<li>" +
-                            "<a ng-click=\"showPublisherTile = !showPublisherTile\"" +
-                               "ng-disabled=\"isSubscribing() && !isBeingSubscribedTo(stream)\">" +
-                                "<span>You</span>" +
-
-                                "<div class=\"pull-right\">" +
-                                    "<i class=\"fa\" ng-class=\"showPublisherTile ? 'fa-compress' : 'fa-expand'\"></i>" +
-                                "</div>" +
-                            "</a>" +
+                        "<li class=\"clearfix\">" +
+                            "<span>You</span>" +
+                            "<div class=\"pull-right inline-block\">" +
+                                "<a ng-click=\"showPublisherTile = !showPublisherTile\"><i class=\"fa\" ng-class=\"showPublisherTile ? 'fa-compress' : 'fa-expand'\"></i></a>" +
+                            "</div>" +
                         "</li>" +
-                        "<li ng-repeat=\"stream in getStreamsAvailable()\">" +
-                            "<a ng-click=\"isBeingSubscribedTo(stream) ? forceDisconnect(stream) : subscribe(stream)\"" +
-                               "ng-show=\"isModerator\">" +
-                                "<span>{{ stream.name }}</span>" +
-
-                                "<div class=\"pull-right\">" +
-                                    "<i class=\"fa\" ng-class=\"isBeingSubscribedTo(stream) ? 'fa-stop' : 'fa-play'\"></i>" +
-                                "</div>" +
-                            "</a>" +
+                        "<li class=\"clearfix\" ng-repeat=\"stream in getStreamsAvailable()\">" +
+                            "<span>{{ stream.name }}</span>" +
+                            "<div class=\"pull-right inline-block\">" +
+                                "<a ng-click=\"isBeingSubscribedTo(stream) ? unsubscribe(stream) : subscribe(stream)\"><i class=\"fa\" ng-class=\"isBeingSubscribedTo(stream) ? 'fa-stop' : 'fa-play'\"></i></a>" +
+                                "<a ng-click=\"forceDisconnect(stream)\" ng-show=\"isModerator()\"><i class=\"fa fa-sign-out\"></i></a>" +
+                            "</div>" +
                         "</li>" +
                     "</ul>" +
                 "</div>" +
@@ -168,7 +148,6 @@
     function LiveConsultationCtrl($scope, SessionManager, DataManager, Publisher, OpentokConfig) {
         $scope.config = OpentokConfig;
         $scope.publishingVideo = Publisher.publishingVideo;
-        $scope.isModerator = true;
         $scope.showPublisherTile = true;
         $scope.publisher = Publisher;
 
@@ -191,15 +170,16 @@
         /* Starts a screensharing stream */
         $scope.publishScreen = SessionManager.publishScreen;
 
+        /* Returns true if the local user is a moderator */
+        $scope.isModerator = SessionManager.isModerator;
+
+        /* Force remote stream to stop publishing and disconnect */
+        $scope.forceDisconnect = SessionManager.forceDisconnect;
+
         $scope.subscribe = function (stream) {
             /* Access must be granted to camera and video to start subscribing */
             if (!$scope.mediaAccessAllowed) {
                 $scope.onAccessRequired();
-                return;
-            }
-
-            /* Only Moderators can subscribe to streams */
-            if (!$scope.isModerator) {
                 return;
             }
 
@@ -212,11 +192,10 @@
             SessionManager.subscribe(stream, true);
         };
 
-        $scope.forceDisconnect = function (stream) {
+        /* Unsubscribe from stream and signal remote user to unsubscribe from you */
+        $scope.unsubscribe = function(stream) {
             SessionManager.unsubscribe(stream, true);
-            DataManager.removeSubscriberByStream(stream);
         };
-
         /* Set publisher's callback methods */
         Publisher.onAccessAllowed = function () {
             $scope.mediaAccessAllowed = true;
@@ -274,6 +253,8 @@
 
                 if (subscriber) {
                     subscriber.isFullscreen = true;
+                } else if (self.subscribers.length) {
+                    self.subscribers[0].isFullscreen = true;
                 } else {
                     Publisher.isFullscreen = true;
                 }
@@ -290,6 +271,8 @@
             self.subscribers = self.subscribers.filter(function (s) {
                 return s.session.stream && s.session.stream.id != stream.id;
             });
+
+            self.switchFullscreen();
         };
 
         self.getStreamByConnection = function (connection) {
@@ -311,7 +294,7 @@
                 });
             }
 
-            self.switchFullscreen(self.subscribers.pop());
+            self.switchFullscreen();
         };
 
         return self;
@@ -379,6 +362,7 @@
         var self = this;
         var session = null;
 
+        /* Set basic configurations and init the session and publisher */
         self.init = function () {
             setContainerSize();
             resetXmlHttpRequest();
@@ -394,6 +378,7 @@
             self.publish();
         };
 
+        /* Start publishing your camera stream to the session */
         self.publish = function () {
             session.connect(OpentokConfig.credentials.token, function (error) {
                 logError(error);
@@ -405,6 +390,7 @@
             });
         };
 
+        /* Start publishing your screenshare stream to the session */
         self.publishScreen = function() {
             OT.checkScreenSharingCapability(function (response) {
                 if (!response.supported || response.extensionRegistered === false) {
@@ -422,13 +408,13 @@
             });
         };
 
+        /* Subscribe to another user's published stream */
         self.subscribe = function (stream, signalSubscribe) {
-            // This must be done in a timeout so the DOM updates with a new subscriber div
             var subscriber = new Subscriber(DataManager.subscribers.length + 1);
 
+            /* This must be done in a timeout so the DOM updates with a new subscriber div */
             $timeout(function () {
                 Publisher.isFullscreen = false;
-
                 DataManager.subscribers.push(subscriber);
             });
 
@@ -446,76 +432,86 @@
             }, 50);
         };
 
-        self.unsubscribe = function (stream, signalDisconnect) {
-            if (signalDisconnect) {
-                /* Send signal to other user to disconnect */
-                session.signal({type: 'disconnect', to: stream.connection});
+        /* Unsubscibe from stream and signal remote stream to unsubscribe from you */
+        self.unsubscribe = function (stream, signalUnsubscribe) {
+            if (signalUnsubscribe) {
+                /* Send signal to remote stream to unsubscribe from us */
+                session.signal({type: 'unsubscribe', to: stream.connection});
             }
 
             session.unsubscribe(stream);
+
+            DataManager.removeSubscriberByStream(stream);
         };
 
+        /* Forces a remove stream to disconnect and removes them from the list of available streams */
         self.forceDisconnect = function (stream) {
-            if (session.capabilities.forceDisconnect != 1) {
-                return;
+            if (self.isModerator()) {
+                DataManager.removeSubscriberByStream();
+                session.forceUnpublish(stream);
+                session.forceDisconnect(stream.connection);
             }
-
-            session.forceUnpublish(stream);
-            session.forceDisconnect(stream);
         };
 
+        /* Returns true if local session is moderator. This is based on their token */
         self.isModerator = function () {
-            return session.capabilities.forceDisconnect == 1;
+            return session && session.capabilities.forceDisconnect == 1;
         };
 
         /* This event is received when a remote stream is created */
-        var streamCreated = function (event) {
+        var onStreamCreated = function (event) {
             $timeout(function () {
                 DataManager.streamsAvailable.push(event.stream);
             });
         };
 
-        /* This event is received when a remote stream disconnects */
-        var streamDestroyed = function (event) {
-            $timeout(function () {
-                DataManager.removeStreamByConnection(event.stream.connection);
-            });
-        };
-
         /* This event is received when a remote connection is destroyed */
-        var connectionDestroyed = function (event) {
+        var onConnectionDestroyed = function (event) {
             $timeout(function () {
                 DataManager.removeStreamByConnection(event.connection);
             });
         };
 
+        /* This event is received when a remote stream disconnects */
+        var onStreamDestroyed = function (event) {
+            $timeout(function () {
+                DataManager.removeStreamByConnection(event.stream.connection);
+            });
+        };
+
         /* This event is received when a remote stream signals us to connect */
-        var signalSubscribe = function (event) {
+        var onSignalSubscribe = function (event) {
             $timeout(function () {
                 self.subscribe(DataManager.getStreamByConnection(event.from), false);
             });
         };
 
-        /* This event is received when a remote stream signals us to disconnect */
-        var signalDisconnect = function (event) {
-            $timeout(function () {
-                session.disconnect();
-                DataManager.streamsAvailable = [];
+        /* This event is received when a remote stream signals us to unsubscribe */
+        var onSignalUnsubscribe = function (event) {
+            var stream = DataManager.getStreamByConnection(event.from);
+            self.unsubscribe(stream, false);
+        };
+
+        /* This event is received when a remote stream signals us to unsubscribe */
+        var onSessionDisconnected = function (event) {
+            $timeout(function() {
                 DataManager.subscribers = [];
+                DataManager.streamsAvailable = [];
             });
         };
 
         function setConnectionCallbacks() {
             session.on({
-                streamCreated: streamCreated,
-                streamDestroyed: streamDestroyed,
-                connectionDestroyed: connectionDestroyed,
+                sessionDisconnected: onSessionDisconnected,
+                streamCreated: onStreamCreated,
+                streamDestroyed: onStreamDestroyed,
+                connectionDestroyed: onConnectionDestroyed,
                 signal: function (event) {
                     if (event.type == 'signal:subscribe') {
-                        signalSubscribe(event);
+                        onSignalSubscribe(event);
                     }
-                    if (event.type == 'signal:disconnect') {
-                        signalDisconnect(event);
+                    if (event.type == 'signal:unsubscribe') {
+                        onSignalUnsubscribe(event);
                     }
                 }
             });

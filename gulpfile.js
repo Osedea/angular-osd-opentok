@@ -9,7 +9,7 @@ var gulp = require('gulp'),
 
 var paths = {
     js: [
-        'src/app.js',
+        'src/module.js',
         'templates/main.js',
         'src/config/**/*.js',
         'src/angular-osd-opentok.js',
@@ -20,7 +20,7 @@ var paths = {
         'bower_components/angular-resource/angular-resource.js',
         'bower_components/ng-lodash/build/ng-lodash.js',
         'bower_components/angular-mocks/angular-mocks.js',
-        'src/app.js',
+        'src/module.js',
         'src/config/**/*.js',
         'src/angular-osd-opentok.js',
         'src/services/**/*.js',

@@ -6,7 +6,6 @@
     function LiveConsultationCtrl($scope, SessionManager, DataManager, Publisher, OpentokConfig) {
         $scope.config = OpentokConfig;
         $scope.publishingVideo = Publisher.publishingVideo;
-        $scope.isModerator = true;
         $scope.showPublisherTile = true;
         $scope.publisher = Publisher;
 
@@ -29,15 +28,16 @@
         /* Starts a screensharing stream */
         $scope.publishScreen = SessionManager.publishScreen;
 
+        /* Returns true if the local user is a moderator */
+        $scope.isModerator = SessionManager.isModerator;
+
+        /* Force remote stream to stop publishing and disconnect */
+        $scope.forceDisconnect = SessionManager.forceDisconnect;
+
         $scope.subscribe = function (stream) {
             /* Access must be granted to camera and video to start subscribing */
             if (!$scope.mediaAccessAllowed) {
                 $scope.onAccessRequired();
-                return;
-            }
-
-            /* Only Moderators can subscribe to streams */
-            if (!$scope.isModerator) {
                 return;
             }
 
@@ -50,11 +50,10 @@
             SessionManager.subscribe(stream, true);
         };
 
-        $scope.forceDisconnect = function (stream) {
+        /* Unsubscribe from stream and signal remote user to unsubscribe from you */
+        $scope.unsubscribe = function(stream) {
             SessionManager.unsubscribe(stream, true);
-            DataManager.removeSubscriberByStream(stream);
         };
-
         /* Set publisher's callback methods */
         Publisher.onAccessAllowed = function () {
             $scope.mediaAccessAllowed = true;
