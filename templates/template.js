@@ -3,15 +3,14 @@
     'use strict';
 
     // @ngInject
-    function osdOpentok($templateCache) {
+    function opentokTemplate($templateCache) {
         $templateCache.put("/templates/angular-osd-opentok.html", "" +
             "<div id=\"opentokDiv\" class=\"video-block\">" +
-                    //"<button class=\"btn btn-primary\" ng-click=\"publishScreen()\" style=\"position: relative; z-index: 100;\">Screenshare</button>" +
                 "<div class=\"subscriber-list\">" +
                     "<div id=\"subscriber-{{ $index + 1 }}\" ng-repeat=\"subscriber in getSubscribers()\" ng-class=\"subscriber.isFullscreen ? 'main-subscriber' : 'thumbnail-subscriber'\" ng-click=\"switchFullscreen(subscriber)\" ng-style=\"subscriber.getStyle()\"></div>" +
                 "</div>" +
                 "<div id=\"publisherDiv\" class=\"publisher\" ng-show=\"showPublisherTile\" ng-class=\"{ 'fullscreen' : publisher.isFullscreen }\"></div>" +
-                "<div id=\"publisherScreenDiv\" class=\"publisher\"></div>" +
+                "<button class=\"btn btn-primary screenshare\" ng-click=\"toggleScreenshare()\" ng-show=\"screenshareIsSupported()\">{{ publisher.options.videoSource == 'screen' ? 'Share Camera' : 'Share Screen' }}</button>" +
                 "<div class=\"dropup\">" +
                     "<button id=\"dropdownMenu2\" class=\"btn btn-primary\" type=\"button\" data-toggle=\"dropdown\" aria-expanded=\"true\">" +
                         "Streams ( {{ getStreamsAvailable().length + 1 }} ) <span class=\"caret\"></span>" +
@@ -36,6 +35,7 @@
         "");
     }
 
+
     angular.module('osdOpentok')
-        .run(osdOpentok);
+        .run(opentokTemplate);
 })();

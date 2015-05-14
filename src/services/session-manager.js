@@ -3,54 +3,63 @@
     'use strict';
 
     // @ngInject
-    function SessionManager($timeout, Publisher, Subscriber, OpentokConfig, DataManager) {
+    function SessionManager($timeout, Publisher, OpentokConfig, DataManager, OPENTOK) {
         var self = this;
         var session = null;
+
+        self.screenshareAbility = null;
 
         /* Set basic configurations and init the session and publisher */
         self.init = function () {
             setContainerSize();
             resetXmlHttpRequest();
-
-            if (OpentokConfig.screenshare) {
-                OT.registerScreenSharingExtension('chrome', OpentokConfig.screenshare.extensionId);
-            }
+            setScreenshareAbility();
 
             session = OT.initSession(OpentokConfig.credentials.apiKey, OpentokConfig.credentials.sid, logError);
 
             setConnectionCallbacks();
 
-            self.publish();
-        };
-
-        /* Start publishing your camera stream to the session */
-        self.publish = function () {
             session.connect(OpentokConfig.credentials.token, function (error) {
                 logError(error);
-
-                Publisher.options.name = OpentokConfig.credentials.name;
-                Publisher.setSession(OT.initPublisher(Publisher.divId, Publisher.options, logError));
-
-                session.publish(Publisher.session, logError);
+                self.publish();
             });
+        };
+
+        /* Start publishing the camera stream to the session */
+        self.publish = function () {
+            if (Publisher.session) {
+                session.unpublish(Publisher.session);
+            }
+
+            Publisher.setOptions();
+            Publisher.setSession(OT.initPublisher(Publisher.divId, Publisher.options, logError));
+            session.publish(Publisher.session, logError);
+        };
+
+        /* Start publishing a screen to the session */
+        self.publishScreen = function() {
+            if (self.screenshareAbility === OPENTOK.UNSUPPORTED) {
+                alert('This browser does not support screen sharing.');
+                return;
+            }
+
+            if (self.screenshareAbility === OPENTOK.EXTENSION_REQUIRED) {
+                alert('Please install the screen sharing extension and load this page over HTTPS.');
+                return;
+            }
+
+            if (Publisher.session) {
+                session.unpublish(Publisher.session);
+            }
+
+            Publisher.setScreenshareOptions();
+            Publisher.setSession(OT.initPublisher(Publisher.divId, Publisher.options, logError));
+            session.publish(Publisher.session, logError);
         };
 
         /* Start publishing your screenshare stream to the session */
-        self.publishScreen = function() {
-            OT.checkScreenSharingCapability(function (response) {
-                if (!response.supported || response.extensionRegistered === false) {
-                    alert('This browser does not support screen sharing.');
-                } else if (response.extensionInstalled === false) {
-                    alert('Please install the screen sharing extension and load this page over HTTPS.');
-                } else {
-                    var publisher = OT.initPublisher('publisherScreenDiv', {
-                        videoSource: 'screen',
-                        name: 'Screenshare'
-                    }, logError);
-
-                    session.publish(publisher, logError);
-                }
-            });
+        self.toggleScreenshare = function() {
+            Publisher.options.videoSource === "screen" ? self.publish() : self.publishScreen();
         };
 
         /* Subscribe to another user's published stream */
@@ -137,7 +146,7 @@
             self.unsubscribe(stream, false);
         };
 
-        /* This event is received when a remote stream signals us to unsubscribe */
+        /* This event is received when our session has been disconnected */
         var onSessionDisconnected = function (event) {
             $timeout(function() {
                 DataManager.subscribers = [];
@@ -160,6 +169,23 @@
                     }
                 }
             });
+        }
+
+        function setScreenshareAbility() {
+            if (OpentokConfig.screenshare) {
+                OT.registerScreenSharingExtension('chrome', OpentokConfig.screenshare.extensionId);
+            }
+
+            OT.checkScreenSharingCapability(function (response) {
+                if (!response.supported || response.extensionRegistered === false) {
+                    self.screenshareAbility = OPENTOK.SCREENSHARE.UNSUPPORTED;
+                } else if (response.extensionInstalled === false) {
+                    self.screenshareAbility = OPENTOK.SCREENSHARE.EXTENSION_REQUIRED;
+                } else {
+                    self.screenshareAbility = OPENTOK.SCREENSHARE.SUPPORTED;
+                }
+            });
+
         }
 
         function setContainerSize() {

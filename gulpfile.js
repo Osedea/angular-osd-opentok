@@ -10,8 +10,9 @@ var gulp = require('gulp'),
 var paths = {
     js: [
         'src/module.js',
-        'templates/main.js',
+        'templates/template.js',
         'src/config/**/*.js',
+        'src/constants.js',
         'src/angular-osd-opentok.js',
         'src/services/**/*.js'
     ],
@@ -22,6 +23,8 @@ var paths = {
         'bower_components/angular-mocks/angular-mocks.js',
         'src/module.js',
         'src/config/**/*.js',
+        'templates/template.js',
+        'src/constants.js',
         'src/angular-osd-opentok.js',
         'src/services/**/*.js',
         'src/sample.js',

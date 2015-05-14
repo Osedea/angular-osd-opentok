@@ -26,7 +26,8 @@
                 return {
                     width: self.isFullscreen ? "100%" : SubscriberConfig.width + "px",
                     height: self.isFullscreen ? "100%" : SubscriberConfig.height + "px",
-                    'margin-left': self.isFullscreen ? 0 : marginLeft + "px"
+                    'margin-left': self.isFullscreen ? 0 : marginLeft + "px",
+                    'z-index': self.isFullscreen ? 1 : 10,
                 };
             };
 

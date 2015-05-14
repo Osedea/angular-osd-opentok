@@ -55,36 +55,27 @@
         };
 
         self.switchFullscreen = function (subscriber) {
-            $timeout(function () {
-                Publisher.isFullscreen = false;
+            if (subscriber && subscriber.isFullscreen) {
+                return;
+            }
 
+            $timeout(function () {
                 self.subscribers.forEach(function (s) {
-                    s.isFullscreen = false;
+                    s.isFullscreen = subscriber && subscriber.divId === s.divId;
                 });
 
-                if (subscriber) {
-                    subscriber.isFullscreen = true;
-                } else if (self.subscribers.length) {
-                    self.subscribers[0].isFullscreen = true;
-                } else {
-                    Publisher.isFullscreen = true;
-                }
+                Publisher.isFullscreen = !subscriber || !self.subscribers.length;
 
                 assignThumbnailCounts();
             });
         };
 
         function assignThumbnailCounts() {
-            var currentThumbnail = 1;
+            var currentThumbnail = 2;
 
-
-            if (!Publisher.isFullscreen) {
-                currentThumbnail = 2;
-            }
-
-            self.subscribers.forEach(function (subscriber) {
-                if (!subscriber.isFullScreen) {
-                    subscriber.thumbnailCount = currentThumbnail++;
+            self.subscribers.forEach(function (s) {
+                if (!s.isFullscreen) {
+                    s.thumbnailCount = currentThumbnail++;
                 }
             });
         }

@@ -3,7 +3,7 @@
     'use strict';
 
     // @ngInject
-    function LiveConsultationCtrl($scope, SessionManager, DataManager, Publisher, OpentokConfig) {
+    function LiveConsultationCtrl($scope, SessionManager, DataManager, Publisher, OpentokConfig, OPENTOK) {
         $scope.config = OpentokConfig;
         $scope.publishingVideo = Publisher.publishingVideo;
         $scope.showPublisherTile = true;
@@ -26,13 +26,18 @@
         $scope.switchFullscreen = DataManager.switchFullscreen;
 
         /* Starts a screensharing stream */
-        $scope.publishScreen = SessionManager.publishScreen;
+        $scope.toggleScreenshare = SessionManager.toggleScreenshare;
 
         /* Returns true if the local user is a moderator */
         $scope.isModerator = SessionManager.isModerator;
 
         /* Force remote stream to stop publishing and disconnect */
         $scope.forceDisconnect = SessionManager.forceDisconnect;
+
+        /* Returns true if screensharing is supported */
+        $scope.screenshareIsSupported = function() {
+            return SessionManager.screenshareAbility == OPENTOK.SCREENSHARE.SUPPORTED;
+        };
 
         $scope.subscribe = function (stream) {
             /* Access must be granted to camera and video to start subscribing */

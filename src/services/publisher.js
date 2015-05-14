@@ -3,7 +3,7 @@
     'use strict';
 
     // @ngInject
-    function Publisher(PublisherConfig) {
+    function Publisher(PublisherConfig, OpentokConfig) {
         var self = this;
 
         self.onAccessAllowed = null;
@@ -12,17 +12,32 @@
         self.publishingVideo = false;
         self.stream = null;
         self.isFullscreen = true;
-        self.divId = 'publisherDiv';
+        self.divId = "publisherDiv";
+        self.options = {};
 
-        self.options = {
-            width: this.isFullscreen ? "100%" : PublisherConfig.width + "px",
-            height: this.isFullscreen ? "100%" : PublisherConfig.height + "px",
-            publishVideo: true,
-            publishAudio: true,
-            insertMode: "append",
+        self.setOptions = function () {
+            self.options = {
+                name: OpentokConfig.credentials.name,
+                width: self.isFullscreen ? "100%" : PublisherConfig.width + "px",
+                height: self.isFullscreen ? "100%" : PublisherConfig.height + "px",
+                publishVideo: true,
+                publishAudio: true,
+                insertMode: "append",
+            };
         };
 
-        self.setSession = function(session) {
+        self.setScreenshareOptions = function () {
+            self.options = {
+                name: OpentokConfig.credentials.name,
+                width: self.isFullscreen ? "100%" : PublisherConfig.width + "px",
+                height: self.isFullscreen ? "100%" : PublisherConfig.height + "px",
+                insertMode: "append",
+                videoSource: "screen",
+            }
+        };
+
+
+        self.setSession = function (session) {
             self.session = session;
 
             self.session.on({
