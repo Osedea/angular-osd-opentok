@@ -154,6 +154,7 @@
             });
         };
 
+        /* Registers callbacks for session related events */
         function setConnectionCallbacks() {
             session.on({
                 sessionDisconnected: onSessionDisconnected,
@@ -171,6 +172,7 @@
             });
         }
 
+        /* Registers the screensharing extension and checks if screensharing is supported */
         function setScreenshareAbility() {
             if (OpentokConfig.screenshare) {
                 OT.registerScreenSharingExtension('chrome', OpentokConfig.screenshare.extensionId);
