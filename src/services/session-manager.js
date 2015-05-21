@@ -187,7 +187,6 @@
                     self.screenshareAbility = OPENTOK.SCREENSHARE.SUPPORTED;
                 }
             });
-
         }
 
         function setContainerSize() {

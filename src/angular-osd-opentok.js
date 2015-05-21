@@ -59,6 +59,7 @@
         $scope.unsubscribe = function(stream) {
             SessionManager.unsubscribe(stream, true);
         };
+
         /* Set publisher's callback methods */
         Publisher.onAccessAllowed = function () {
             $scope.mediaAccessAllowed = true;
