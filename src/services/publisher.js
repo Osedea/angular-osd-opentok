@@ -28,7 +28,7 @@
 
         self.setScreenshareOptions = function () {
             self.options = {
-                name: OpentokConfig.credentials.name,
+                name: OpentokConfig.credentials.name + ' - Screenshare',
                 width: self.isFullscreen ? "100%" : PublisherConfig.width + "px",
                 height: self.isFullscreen ? "100%" : PublisherConfig.height + "px",
                 insertMode: "append",

@@ -27,9 +27,9 @@
 
         /* Start publishing the camera stream to the session */
         self.publish = function () {
-            if (Publisher.session) {
-                session.unpublish(Publisher.session);
-            }
+            //if (Publisher.session) {
+            //    session.unpublish(Publisher.session);
+            //}
 
             Publisher.setOptions();
             Publisher.setSession(OT.initPublisher(Publisher.divId, Publisher.options, logError));
@@ -49,9 +49,10 @@
                 return;
             }
 
-            if (Publisher.session) {
-                session.unpublish(Publisher.session);
-            }
+            console.log('publishing screen');
+            //if (Publisher.session) {
+            //    session.unpublish(Publisher.session);
+            //}
 
             Publisher.setScreenshareOptions();
             Publisher.setSession(OT.initPublisher(Publisher.divId, Publisher.options, logError));

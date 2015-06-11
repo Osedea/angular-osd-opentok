@@ -390,7 +390,7 @@
 
         self.setScreenshareOptions = function () {
             self.options = {
-                name: OpentokConfig.credentials.name,
+                name: OpentokConfig.credentials.name + ' - Screenshare',
                 width: self.isFullscreen ? "100%" : PublisherConfig.width + "px",
                 height: self.isFullscreen ? "100%" : PublisherConfig.height + "px",
                 insertMode: "append",
@@ -453,12 +453,13 @@
 
         /* Start publishing the camera stream to the session */
         self.publish = function () {
-            if (Publisher.session) {
-                session.unpublish(Publisher.session);
-            }
+            //if (Publisher.session) {
+            //    session.unpublish(Publisher.session);
+            //}
 
             Publisher.setOptions();
             Publisher.setSession(OT.initPublisher(Publisher.divId, Publisher.options, logError));
+
             session.publish(Publisher.session, logError);
         };
 
@@ -474,12 +475,14 @@
                 return;
             }
 
-            if (Publisher.session) {
-                session.unpublish(Publisher.session);
-            }
+            console.log('publishing screen');
+            //if (Publisher.session) {
+            //    session.unpublish(Publisher.session);
+            //}
 
             Publisher.setScreenshareOptions();
             Publisher.setSession(OT.initPublisher(Publisher.divId, Publisher.options, logError));
+
             session.publish(Publisher.session, logError);
         };
 
@@ -523,7 +526,7 @@
             DataManager.removeSubscriberByStream(stream);
         };
 
-        /* Forces a remove stream to disconnect and removes them from the list of available streams */
+        /* Forces a stream to disconnect and removes them from the list of available streams */
         self.forceDisconnect = function (stream) {
             if (self.isModerator()) {
                 DataManager.removeSubscriberByStream();
@@ -533,7 +536,7 @@
             }
         };
 
-        /* Returns true if local session is moderator. This is based on their token */
+        /* Returns true if local session is moderator. This is based on their Opentok token. */
         self.isModerator = function () {
             return session && session.capabilities.forceDisconnect == 1;
         };
@@ -555,6 +558,7 @@
         /* This event is received when a remote stream disconnects */
         var onStreamDestroyed = function (event) {
             $timeout(function () {
+                console.log('on stream destroyed');
                 DataManager.removeStreamByConnection(event.stream.connection);
             });
         };
