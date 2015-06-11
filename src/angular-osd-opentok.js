@@ -3,20 +3,25 @@
     'use strict';
 
     // @ngInject
-    function LiveConsultationCtrl($scope, SessionManager, DataManager, Publisher, OpentokConfig, OPENTOK) {
+    function LiveConsultationCtrl($scope, SessionManager, DataManager, OpentokConfig, OPENTOK) {
         $scope.config = OpentokConfig;
-        $scope.publishingVideo = Publisher.publishingVideo;
-        $scope.showPublisherTile = true;
-        $scope.publisher = Publisher;
 
         /* Streams that are in the session but not necessarily being subscribed to */
-        $scope.getStreamsAvailable = function () {
-            return DataManager.streamsAvailable;
-        };
+        $scope.getStreamsAvailable = DataManager.getStreamsAvailable;
 
         /* Streams that are in the session and being subscribed to */
-        $scope.getSubscribers = function () {
-            return DataManager.subscribers;
+        $scope.getSubscribers = DataManager.getSubscribers;
+
+        /* Returns the camera publisher if it exists */
+        $scope.isFullscreen = function() {
+            var publishers = DataManager.getPublishers();
+            return publishers.length ? publishers[0].isFullscreen : false;
+        };
+
+        /* Returns the screenshare publisher if it exists */
+        $scope.getScreensharePublisher = function() {
+            var publishers = DataManager.getPublishers();
+            return publishers.length ? publishers[1] : null;
         };
 
         /* Returns true if the given stream is being subscribed to */
@@ -41,7 +46,7 @@
 
         $scope.subscribe = function (stream) {
             /* Access must be granted to camera and video to start subscribing */
-            if (!$scope.mediaAccessAllowed) {
+            if (!SessionManager.getMediaAccessAllowed()) {
                 $scope.onAccessRequired();
                 return;
             }
@@ -59,19 +64,6 @@
         $scope.unsubscribe = function(stream) {
             SessionManager.unsubscribe(stream, true);
         };
-
-        /* Set publisher's callback methods */
-        Publisher.onAccessAllowed = function () {
-            $scope.mediaAccessAllowed = true;
-            $scope.onMediaAccessAllowed();
-            $scope.$apply();
-        };
-
-        Publisher.onAccessDenied = function () {
-            $scope.mediaAccessAllowed = false;
-            $scope.onAccessDenied();
-            $scope.$apply();
-        };
     }
 
     // @ngInject
@@ -83,10 +75,8 @@
             controller: 'LiveConsultationCtrl',
             controllerAs: 'liveCtrl',
             scope: {
-                onAccessDenied: '&',
                 onAccessRequired: '&',
                 onSubscriberLimitReached: '&',
-                onMediaAccessAllowed: '&'
             }
         };
     }

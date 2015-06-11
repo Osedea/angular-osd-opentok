@@ -46,5 +46,4 @@
 
     angular.module("osdOpentok")
         .service("Subscriber", Subscriber);
-
 })();

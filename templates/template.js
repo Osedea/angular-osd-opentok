@@ -9,8 +9,9 @@
                 "<div class=\"subscriber-list\">" +
                     "<div id=\"subscriber-{{ $index + 1 }}\" ng-repeat=\"subscriber in getSubscribers()\" ng-class=\"subscriber.isFullscreen ? 'main-subscriber' : 'thumbnail-subscriber'\" ng-click=\"switchFullscreen(subscriber)\" ng-style=\"subscriber.getStyle()\"></div>" +
                 "</div>" +
-                "<div id=\"publisherDiv\" class=\"publisher\" ng-show=\"showPublisherTile\" ng-class=\"{ 'fullscreen' : publisher.isFullscreen }\"></div>" +
-                "<button class=\"btn btn-primary screenshare\" ng-click=\"toggleScreenshare()\" ng-show=\"screenshareIsSupported()\">{{ publisher.options.videoSource == 'screen' ? 'Share Camera' : 'Share Screen' }}</button>" +
+                "<div id=\"screenshareDiv\" class=\"screenshare\"></div>" +
+                "<div id=\"publisherDiv\" class=\"publisher\" ng-class=\"{ 'fullscreen' : isFullscreen() }\"></div>" +
+                "<button class=\"btn btn-primary btn-screenshare\" ng-click=\"toggleScreenshare()\" ng-show=\"screenshareIsSupported()\">{{ getScreensharePublisher() ? 'Stop Sharing' : 'Share Screen' }}</button>" +
                 "<div class=\"dropup\">" +
                     "<button id=\"dropdownMenu2\" class=\"btn btn-primary\" type=\"button\" data-toggle=\"dropdown\" aria-expanded=\"true\">" +
                         "Streams ( {{ getStreamsAvailable().length + 1 }} ) <span class=\"caret\"></span>" +

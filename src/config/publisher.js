@@ -10,20 +10,22 @@
     osdOpentok.provider('PublisherConfig', function () {
         var self = this;
 
-        var config = {
+        self.config = {
             width: 200,
             height: 150,
-            name: "Me"
+            name: "Me",
+            onMediaAccessAllowed: null,
+            onMediaAccessDenied: null,
         };
 
         self.setConfig = function(value) {
-            config = value;
+            self.config = value;
 
             return self;
         };
 
         self.$get = function () {
-            return config;
+            return self.config;
         };
 
         return self;

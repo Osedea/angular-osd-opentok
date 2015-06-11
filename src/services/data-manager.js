@@ -7,13 +7,43 @@
         var self = this;
 
         self.subscribers = [];
+        self.publishers = [];
         self.streamsAvailable = [];
+
+        self.getSubscribers = function() {
+            return self.subscribers;
+        };
+
+        self.getPublishers = function() {
+            return self.publishers;
+        };
+
+        self.getStreamsAvailable = function() {
+            return self.streamsAvailable;
+        };
+
+        self.createPublisher = function(isScreenshare) {
+            var publisher = new Publisher(isScreenshare);
+
+            if (isScreenshare) {
+                publisher.setScreenshareOptions();
+            } else {
+                publisher.setOptions();
+            }
+
+            self.publishers.push(publisher);
+
+            console.log('setting publisher: ', self.publishers);
+
+            return publisher;
+        };
 
         /* Creates a new subscriber object and adds it to the list of subscribers */
         self.createSubscriber = function() {
             var subscriber = new Subscriber(self.subscribers.length + 1);
 
-            Publisher.isFullscreen = false;
+            self.publishers[0].isFullscreen = false;
+
             self.subscribers.push(subscriber);
 
             return subscriber;
@@ -86,7 +116,7 @@
                     s.isFullscreen = subscriber && subscriber.divId === s.divId;
                 });
 
-                Publisher.isFullscreen = !subscriber || !self.subscribers.length;
+                self.publishers[0].isFullscreen = !subscriber || !self.subscribers.length;
 
                 assignThumbnailCounts();
             });

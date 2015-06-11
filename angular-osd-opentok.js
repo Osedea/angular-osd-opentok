@@ -13,8 +13,9 @@
                 "<div class=\"subscriber-list\">" +
                     "<div id=\"subscriber-{{ $index + 1 }}\" ng-repeat=\"subscriber in getSubscribers()\" ng-class=\"subscriber.isFullscreen ? 'main-subscriber' : 'thumbnail-subscriber'\" ng-click=\"switchFullscreen(subscriber)\" ng-style=\"subscriber.getStyle()\"></div>" +
                 "</div>" +
-                "<div id=\"publisherDiv\" class=\"publisher\" ng-show=\"showPublisherTile\" ng-class=\"{ 'fullscreen' : publisher.isFullscreen }\"></div>" +
-                "<button class=\"btn btn-primary screenshare\" ng-click=\"toggleScreenshare()\" ng-show=\"screenshareIsSupported()\">{{ publisher.options.videoSource == 'screen' ? 'Share Camera' : 'Share Screen' }}</button>" +
+                "<div id=\"screenshareDiv\" class=\"screenshare\"></div>" +
+                "<div id=\"publisherDiv\" class=\"publisher\" ng-class=\"{ 'fullscreen' : isFullscreen() }\"></div>" +
+                "<button class=\"btn btn-primary btn-screenshare\" ng-click=\"toggleScreenshare()\" ng-show=\"screenshareIsSupported()\">{{ getScreensharePublisher() ? 'Stop Sharing' : 'Share Screen' }}</button>" +
                 "<div class=\"dropup\">" +
                     "<button id=\"dropdownMenu2\" class=\"btn btn-primary\" type=\"button\" data-toggle=\"dropdown\" aria-expanded=\"true\">" +
                         "Streams ( {{ getStreamsAvailable().length + 1 }} ) <span class=\"caret\"></span>" +
@@ -88,20 +89,22 @@
     osdOpentok.provider('PublisherConfig', function () {
         var self = this;
 
-        var config = {
+        self.config = {
             width: 200,
             height: 150,
-            name: "Me"
+            name: "Me",
+            onMediaAccessAllowed: null,
+            onMediaAccessDenied: null,
         };
 
         self.setConfig = function(value) {
-            config = value;
+            self.config = value;
 
             return self;
         };
 
         self.$get = function () {
-            return config;
+            return self.config;
         };
 
         return self;
@@ -156,20 +159,25 @@
     'use strict';
 
     // @ngInject
-    function LiveConsultationCtrl($scope, SessionManager, DataManager, Publisher, OpentokConfig, OPENTOK) {
+    function LiveConsultationCtrl($scope, SessionManager, DataManager, OpentokConfig, OPENTOK) {
         $scope.config = OpentokConfig;
-        $scope.publishingVideo = Publisher.publishingVideo;
-        $scope.showPublisherTile = true;
-        $scope.publisher = Publisher;
 
         /* Streams that are in the session but not necessarily being subscribed to */
-        $scope.getStreamsAvailable = function () {
-            return DataManager.streamsAvailable;
-        };
+        $scope.getStreamsAvailable = DataManager.getStreamsAvailable;
 
         /* Streams that are in the session and being subscribed to */
-        $scope.getSubscribers = function () {
-            return DataManager.subscribers;
+        $scope.getSubscribers = DataManager.getSubscribers;
+
+        /* Returns the camera publisher if it exists */
+        $scope.isFullscreen = function() {
+            var publishers = DataManager.getPublishers();
+            return publishers.length ? publishers[0].isFullscreen : false;
+        };
+
+        /* Returns the screenshare publisher if it exists */
+        $scope.getScreensharePublisher = function() {
+            var publishers = DataManager.getPublishers();
+            return publishers.length ? publishers[1] : null;
         };
 
         /* Returns true if the given stream is being subscribed to */
@@ -194,7 +202,7 @@
 
         $scope.subscribe = function (stream) {
             /* Access must be granted to camera and video to start subscribing */
-            if (!$scope.mediaAccessAllowed) {
+            if (!SessionManager.getMediaAccessAllowed()) {
                 $scope.onAccessRequired();
                 return;
             }
@@ -212,19 +220,6 @@
         $scope.unsubscribe = function(stream) {
             SessionManager.unsubscribe(stream, true);
         };
-
-        /* Set publisher's callback methods */
-        Publisher.onAccessAllowed = function () {
-            $scope.mediaAccessAllowed = true;
-            $scope.onMediaAccessAllowed();
-            $scope.$apply();
-        };
-
-        Publisher.onAccessDenied = function () {
-            $scope.mediaAccessAllowed = false;
-            $scope.onAccessDenied();
-            $scope.$apply();
-        };
     }
 
     // @ngInject
@@ -236,10 +231,8 @@
             controller: 'LiveConsultationCtrl',
             controllerAs: 'liveCtrl',
             scope: {
-                onAccessDenied: '&',
                 onAccessRequired: '&',
                 onSubscriberLimitReached: '&',
-                onMediaAccessAllowed: '&'
             }
         };
     }
@@ -258,13 +251,43 @@
         var self = this;
 
         self.subscribers = [];
+        self.publishers = [];
         self.streamsAvailable = [];
+
+        self.getSubscribers = function() {
+            return self.subscribers;
+        };
+
+        self.getPublishers = function() {
+            return self.publishers;
+        };
+
+        self.getStreamsAvailable = function() {
+            return self.streamsAvailable;
+        };
+
+        self.createPublisher = function(isScreenshare) {
+            var publisher = new Publisher(isScreenshare);
+
+            if (isScreenshare) {
+                publisher.setScreenshareOptions();
+            } else {
+                publisher.setOptions();
+            }
+
+            self.publishers.push(publisher);
+
+            console.log('setting publisher: ', self.publishers);
+
+            return publisher;
+        };
 
         /* Creates a new subscriber object and adds it to the list of subscribers */
         self.createSubscriber = function() {
             var subscriber = new Subscriber(self.subscribers.length + 1);
 
-            Publisher.isFullscreen = false;
+            self.publishers[0].isFullscreen = false;
+
             self.subscribers.push(subscriber);
 
             return subscriber;
@@ -337,7 +360,7 @@
                     s.isFullscreen = subscriber && subscriber.divId === s.divId;
                 });
 
-                Publisher.isFullscreen = !subscriber || !self.subscribers.length;
+                self.publishers[0].isFullscreen = !subscriber || !self.subscribers.length;
 
                 assignThumbnailCounts();
             });
@@ -366,58 +389,51 @@
 
     // @ngInject
     function Publisher(PublisherConfig, OpentokConfig) {
-        var self = this;
+        return function (isScreenshare) {
+            var self = this;
 
-        self.onAccessAllowed = null;
-        self.onAccessDenied = null;
-        self.session = null;
-        self.publishingVideo = false;
-        self.stream = null;
-        self.isFullscreen = true;
-        self.divId = "publisherDiv";
-        self.options = {};
+            self.session = null;
+            self.publishingVideo = false;
+            self.stream = null;
+            self.isFullscreen = true;
+            self.divId = isScreenshare ? "screenshareDiv" : "publisherDiv";
+            self.options = {};
 
-        self.setOptions = function () {
-            self.options = {
-                name: OpentokConfig.credentials.name,
-                width: self.isFullscreen ? "100%" : PublisherConfig.width + "px",
-                height: self.isFullscreen ? "100%" : PublisherConfig.height + "px",
-                publishVideo: true,
-                publishAudio: true,
-                insertMode: "append",
+            /* Config for sharing camera */
+            self.setOptions = function () {
+                self.options = {
+                    name: OpentokConfig.credentials.name,
+                    width: self.isFullscreen ? "100%" : PublisherConfig.width + "px",
+                    height: self.isFullscreen ? "100%" : PublisherConfig.height + "px",
+                    publishVideo: true,
+                    publishAudio: true,
+                    insertMode: "append",
+                };
             };
-        };
 
-        self.setScreenshareOptions = function () {
-            self.options = {
-                name: OpentokConfig.credentials.name + ' - Screenshare',
-                width: self.isFullscreen ? "100%" : PublisherConfig.width + "px",
-                height: self.isFullscreen ? "100%" : PublisherConfig.height + "px",
-                insertMode: "append",
-                videoSource: "screen",
-            }
-        };
+            /* Config for screensharing */
+            self.setScreenshareOptions = function () {
+                self.options = {
+                    name: 'Screenshare',
+                    width: self.isFullscreen ? "100%" : PublisherConfig.width + "px",
+                    height: self.isFullscreen ? "100%" : PublisherConfig.height + "px",
+                    insertMode: "append",
+                    videoSource: "screen",
+                }
+            };
 
+            /* Toggle camera stream */
+            self.toggleVideo = function () {
+                if (!self.session) return;
 
-        self.setSession = function (session) {
-            self.session = session;
+                self.session.publishVideo(!self.publishingVideo);
+                self.publishingVideo = !self.publishingVideo;
 
-            self.session.on({
-                accessAllowed: self.onAccessAllowed,
-                accessDenied: self.onAccessDenied
-            });
-        };
+                return self.publishingVideo;
+            };
 
-        self.toggleVideo = function () {
-            if (!self.session) return;
-
-            self.session.publishVideo(!self.publishingVideo);
-            self.publishingVideo = !self.publishingVideo;
-
-            return self.publishingVideo;
-        };
-
-        return self;
+            return self;
+        }
     }
 
     angular.module("osdOpentok")
@@ -429,11 +445,12 @@
     'use strict';
 
     // @ngInject
-    function SessionManager($timeout, Publisher, OpentokConfig, DataManager, OPENTOK) {
+    function SessionManager($timeout, OpentokConfig, DataManager, OPENTOK) {
         var self = this;
-        var session = null;
+        var sessionManager = null;
 
         self.screenshareAbility = null;
+        self.mediaAccessAllowed = false;
 
         /* Set basic configurations and init the session and publisher */
         self.init = function () {
@@ -441,54 +458,48 @@
             resetXmlHttpRequest();
             setScreenshareAbility();
 
-            session = OT.initSession(OpentokConfig.credentials.apiKey, OpentokConfig.credentials.sid, logError);
+            sessionManager = OT.initSession(OpentokConfig.credentials.apiKey, OpentokConfig.credentials.sid, logError);
 
             setConnectionCallbacks();
 
-            session.connect(OpentokConfig.credentials.token, function (error) {
+            sessionManager.connect(OpentokConfig.credentials.token, function (error) {
                 logError(error);
-                self.publish();
+
+                self.addPublisherToSession(false);
             });
         };
 
-        /* Start publishing the camera stream to the session */
-        self.publish = function () {
-            //if (Publisher.session) {
-            //    session.unpublish(Publisher.session);
-            //}
-
-            Publisher.setOptions();
-            Publisher.setSession(OT.initPublisher(Publisher.divId, Publisher.options, logError));
-
-            session.publish(Publisher.session, logError);
-        };
-
-        /* Start publishing a screen to the session */
-        self.publishScreen = function() {
-            if (self.screenshareAbility === OPENTOK.UNSUPPORTED) {
+        /* Start publishing a screen or camera to the session */
+        self.addPublisherToSession = function(isScreenshare) {
+            if (isScreenshare && self.screenshareAbility === OPENTOK.UNSUPPORTED) {
                 alert('This browser does not support screen sharing.');
                 return;
             }
 
-            if (self.screenshareAbility === OPENTOK.EXTENSION_REQUIRED) {
+            if (isScreenshare && self.screenshareAbility === OPENTOK.EXTENSION_REQUIRED) {
                 alert('Please install the screen sharing extension and load this page over HTTPS.');
                 return;
             }
 
-            console.log('publishing screen');
-            //if (Publisher.session) {
-            //    session.unpublish(Publisher.session);
-            //}
+            $timeout(function() {
+                var publisher = DataManager.createPublisher(isScreenshare);
 
-            Publisher.setScreenshareOptions();
-            Publisher.setSession(OT.initPublisher(Publisher.divId, Publisher.options, logError));
+                publisher.session = OT.initPublisher(publisher.divId, publisher.options, logError);
 
-            session.publish(Publisher.session, logError);
+                setPublisherCallbacks(publisher);
+
+                sessionManager.publish(publisher.session, logError);
+            });
         };
 
         /* Start publishing your screenshare stream to the session */
         self.toggleScreenshare = function() {
-            Publisher.options.videoSource === "screen" ? self.publish() : self.publishScreen();
+            if (DataManager.publishers.length > 1) {
+                sessionManager.unpublish(DataManager.publishers[1].session);
+                DataManager.publishers.splice(1, 1);
+            } else {
+                self.addPublisherToSession(true);
+            }
         };
 
         /* Subscribe to another user's published stream */
@@ -501,7 +512,7 @@
             });
 
             $timeout(function () {
-                subscriber.session = session.subscribe(stream, subscriber.divId, subscriber.options);
+                subscriber.session = sessionManager.subscribe(stream, subscriber.divId, subscriber.options);
 
                 if (DataManager.subscribers.length > OpentokConfig.maxVideoSubscribers) {
                     subscriber.session.subscribeToVideo(false);
@@ -509,7 +520,7 @@
 
                 /* Send signal to other user to subscribe */
                 if (signalSubscribe) {
-                    session.signal({type: 'subscribe', to: stream.connection});
+                    sessionManager.signal({type: 'subscribe', to: stream.connection});
                 }
             }, 50);
         };
@@ -518,10 +529,10 @@
         self.unsubscribe = function (stream, signalUnsubscribe) {
             if (signalUnsubscribe) {
                 /* Send signal to remote stream to unsubscribe from us */
-                session.signal({type: 'unsubscribe', to: stream.connection});
+                sessionManager.signal({type: 'unsubscribe', to: stream.connection});
             }
 
-            session.unsubscribe(stream);
+            sessionManager.unsubscribe(stream);
 
             DataManager.removeSubscriberByStream(stream);
         };
@@ -531,14 +542,18 @@
             if (self.isModerator()) {
                 DataManager.removeSubscriberByStream();
 
-                session.forceUnpublish(stream);
-                session.forceDisconnect(stream.connection);
+                sessionManager.forceUnpublish(stream);
+                sessionManager.forceDisconnect(stream.connection);
             }
         };
 
         /* Returns true if local session is moderator. This is based on their Opentok token. */
         self.isModerator = function () {
-            return session && session.capabilities.forceDisconnect == 1;
+            return sessionManager && sessionManager.capabilities.forceDisconnect == 1;
+        };
+
+        self.getMediaAccessAllowed = function () {
+            return self.mediaAccessAllowed;
         };
 
         /* This event is received when a remote stream is created */
@@ -558,7 +573,6 @@
         /* This event is received when a remote stream disconnects */
         var onStreamDestroyed = function (event) {
             $timeout(function () {
-                console.log('on stream destroyed');
                 DataManager.removeStreamByConnection(event.stream.connection);
             });
         };
@@ -586,7 +600,7 @@
 
         /* Registers callbacks for session related events */
         function setConnectionCallbacks() {
-            session.on({
+            sessionManager.on({
                 sessionDisconnected: onSessionDisconnected,
                 streamCreated: onStreamCreated,
                 streamDestroyed: onStreamDestroyed,
@@ -599,6 +613,16 @@
                         onSignalUnsubscribe(event);
                     }
                 }
+            });
+        }
+
+        function setPublisherCallbacks(publisher) {
+            publisher.session.on({
+                accessAllowed: function() {
+                    self.mediaAccessAllowed = true;
+                    OpentokConfig.onMediaAccessAllowed();
+                },
+                accessDenied: OpentokConfig.onMediaAccessDenied
             });
         }
 
@@ -692,5 +716,4 @@
 
     angular.module("osdOpentok")
         .service("Subscriber", Subscriber);
-
 })();
