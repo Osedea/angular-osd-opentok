@@ -277,8 +277,6 @@
 
             self.publishers.push(publisher);
 
-            console.log('setting publisher: ', self.publishers);
-
             return publisher;
         };
 
