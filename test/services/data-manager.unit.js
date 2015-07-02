@@ -1,8 +1,7 @@
 describe('LiveConsultationCtrl', function () {
-    var DataManager, Publisher, subscribers;
+    var DataManager, subscribers;
 
     beforeEach(module('osdOpentok'));
-
 
     beforeEach(inject(function (_DataManager_) {
         DataManager = _DataManager_;
@@ -94,7 +93,6 @@ describe('LiveConsultationCtrl', function () {
       it('should return the correct stream when given a valid connection', function() {
         var stream = subscribers[0].session.stream;
         var connection = subscribers[0].session.stream.connection;
-
         var responseStream = DataManager.getStreamByConnection(connection);
 
         expect(responseStream).toEqual(stream);
@@ -103,16 +101,13 @@ describe('LiveConsultationCtrl', function () {
       it('should return the correct stream even if we are not subscribing to it', function() {
         var stream = subscribers[1].session.stream;
         var connection = subscribers[1].session.stream.connection;
-
         var responseStream = DataManager.getStreamByConnection(connection);
 
         expect(responseStream).toEqual(stream);
       });
 
       it('should return null if the connection is not part of an available stream', function() {
-        var stream = subscribers[3].session.stream;
         var connection = subscribers[3].session.stream.connection;
-
         var responseStream = DataManager.getStreamByConnection(connection);
 
         expect(responseStream).toEqual(null);

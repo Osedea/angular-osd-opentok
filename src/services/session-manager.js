@@ -83,7 +83,7 @@
             }, 50);
         };
 
-        /* Unsubscibe from stream and signal remote stream to unsubscribe from you */
+        /* Unsubscribe from stream and signal remote stream to unsubscribe from you */
         self.unsubscribe = function (stream, signalUnsubscribe) {
             if (signalUnsubscribe) {
                 /* Send signal to remote stream to unsubscribe from us */
