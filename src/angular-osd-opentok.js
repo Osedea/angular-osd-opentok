@@ -5,6 +5,7 @@
     // @ngInject
     function LiveConsultationCtrl($scope, SessionManager, DataManager, OpentokConfig, OPENTOK) {
         $scope.config = OpentokConfig;
+        $scope.showPublisherTile = true;
 
         /* Streams that are in the session but not necessarily being subscribed to */
         $scope.getStreamsAvailable = DataManager.getStreamsAvailable;
@@ -30,7 +31,7 @@
         /* Sets the given subscriber to fullscreen */
         $scope.switchFullscreen = DataManager.switchFullscreen;
 
-        /* Starts a screensharing stream */
+        /* Starts/stops a screensharing stream */
         $scope.toggleScreenshare = SessionManager.toggleScreenshare;
 
         /* Returns true if the local user is a moderator */
@@ -44,6 +45,7 @@
             return SessionManager.screenshareAbility == OPENTOK.SCREENSHARE.SUPPORTED;
         };
 
+        /* Subscribe to a remote video stream */
         $scope.subscribe = function (stream) {
             /* Access must be granted to camera and video to start subscribing */
             if (!SessionManager.getMediaAccessAllowed()) {

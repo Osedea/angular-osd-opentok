@@ -14,7 +14,7 @@
                     "<div id=\"subscriber-{{ $index + 1 }}\" ng-repeat=\"subscriber in getSubscribers()\" ng-class=\"subscriber.isFullscreen ? 'main-subscriber' : 'thumbnail-subscriber'\" ng-click=\"switchFullscreen(subscriber)\" ng-style=\"subscriber.getStyle()\"></div>" +
                 "</div>" +
                 "<div id=\"screenshareDiv\" class=\"screenshare\"></div>" +
-                "<div id=\"publisherDiv\" class=\"publisher\" ng-class=\"{ 'fullscreen' : isFullscreen() }\"></div>" +
+                "<div id=\"publisherDiv\" class=\"publisher\" ng-show=\"showPublisherTile\" ng-class=\"{ 'fullscreen' : isFullscreen() }\"></div>" +
                 "<button class=\"btn btn-primary btn-screenshare\" ng-click=\"toggleScreenshare()\" ng-show=\"screenshareIsSupported()\">{{ getScreensharePublisher() ? 'Stop Sharing' : 'Share Screen' }}</button>" +
                 "<div class=\"dropup\">" +
                     "<button id=\"dropdownMenu2\" class=\"btn btn-primary\" type=\"button\" data-toggle=\"dropdown\" aria-expanded=\"true\">" +
@@ -161,6 +161,7 @@
     // @ngInject
     function LiveConsultationCtrl($scope, SessionManager, DataManager, OpentokConfig, OPENTOK) {
         $scope.config = OpentokConfig;
+        $scope.showPublisherTile = true;
 
         /* Streams that are in the session but not necessarily being subscribed to */
         $scope.getStreamsAvailable = DataManager.getStreamsAvailable;
@@ -186,7 +187,7 @@
         /* Sets the given subscriber to fullscreen */
         $scope.switchFullscreen = DataManager.switchFullscreen;
 
-        /* Starts a screensharing stream */
+        /* Starts/stops a screensharing stream */
         $scope.toggleScreenshare = SessionManager.toggleScreenshare;
 
         /* Returns true if the local user is a moderator */
@@ -200,6 +201,7 @@
             return SessionManager.screenshareAbility == OPENTOK.SCREENSHARE.SUPPORTED;
         };
 
+        /* Subscribe to a remote video stream */
         $scope.subscribe = function (stream) {
             /* Access must be granted to camera and video to start subscribing */
             if (!SessionManager.getMediaAccessAllowed()) {
